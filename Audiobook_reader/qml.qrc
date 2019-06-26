@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>Components/InfoPage.qml</file>
+        <file>Components/Player.qml</file>
+        <file>imports/Theme/qmldir</file>
+        <file>imports/Theme/Theme.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>Components/Player2.qml</file>
+        <file>Components/BookList.qml</file>
+        <file>Components/Settings.qml</file>
+        <file>Components/Playlist.qml</file>
+        <file>Components/OpenFolderDialog.qml</file>
+    </qresource>
+</RCC>

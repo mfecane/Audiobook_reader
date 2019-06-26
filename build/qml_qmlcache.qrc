@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<RCC>
+    <qresource prefix="/">
+        <file alias="imports/Theme/qmldir">../Audiobook_reader/imports/Theme/qmldir</file>
+        <file alias="qtquickcontrols2.conf">../Audiobook_reader/qtquickcontrols2.conf</file>
+    </qresource>
+</RCC>
