@@ -44,7 +44,7 @@ private slots:
 
     void bufferReady();
     void onError(QAudioDecoder::Error err);
-    void finished();
+    void decodingFinished();
     void checkSmallBuffer();
 
 private:

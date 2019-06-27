@@ -57,7 +57,7 @@ void Player::stop() {
         m_audio = nullptr;
         m_timer.stop();
         m_state = QMediaPlayer::State::StoppedState;
-        emit positionChanged(position());
+        //emit positionChanged(position());
     }
     //    qDebug() << "STOP EVENT";
 }

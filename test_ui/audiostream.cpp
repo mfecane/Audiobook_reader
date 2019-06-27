@@ -25,15 +25,22 @@ AudioStream::AudioStream(QAudioFormat format):
     soundtouch_setChannels(handle, m_format.channelCount());
 
     connect(m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
-    connect(m_decoder, SIGNAL(finished()), this, SLOT(finished()));
+    connect(m_decoder, SIGNAL(decodingFinished()), this, SLOT(decodingFinished()));
     connect(m_decoder, SIGNAL(error(QAudioDecoder::Error)), this, SLOT(onError(QAudioDecoder::Error)));
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(checkSmallBuffer()));
 }
 
 qint64 AudioStream::readData(char *data, qint64 maxlen) {
-    qDebug() << "asking for more";
+    //qDebug() << "asking for more";
 
     if(maxlen > 0) {
+
+        if (atEnd()) {
+            qDebug() << "atEnd" ;
+            //emit onFinished(); //<< crash here
+            return -1;
+        }
+
         checkSmallBuffer();
         int readlen = qMin( (int)maxlen, m_smallbuffer.size());
         memset(data, 0, maxlen);
@@ -41,11 +48,6 @@ qint64 AudioStream::readData(char *data, qint64 maxlen) {
         buff.open(QIODevice::ReadOnly);
         buff.read(data, readlen);
         m_smallbuffer.remove(0, readlen);
-
-        if (atEnd()) {
-            emit onFinished();
-            return -1;
-        }
         return maxlen;
     }
     return maxlen;
@@ -164,6 +166,7 @@ qint64 AudioStream::writeData(const char *data, qint64 len) { // delete
 }
 
 bool AudioStream::atEnd() const {
+    //qDebug() << "outbuffer size" << m_outBuffer.size() - m_outBuffer.pos();
     return m_outBuffer.size()
             && m_outBuffer.atEnd()
             && isDecodingFinished;
@@ -219,6 +222,6 @@ void AudioStream::bufferReady() { // SLOT
     checkSmallBuffer();
 }
 
-void AudioStream::finished() { // SLOT
+void AudioStream::decodingFinished() { // SLOT
     isDecodingFinished = true;
 }
