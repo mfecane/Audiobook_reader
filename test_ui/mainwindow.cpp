@@ -11,11 +11,16 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 MainWindow::~MainWindow() {
-    delete ui;
+    //    delete ui;
 }
 
 void MainWindow::on_playButton_clicked() {
     m_player->play();
+    m_player->play();
+}
+
+void MainWindow::on_stopButton_clicked() {
+    m_player->stop();
 }
 
 void MainWindow::on_fwdButton_clicked() {
@@ -32,19 +37,30 @@ void MainWindow::positionChanged(int pos) {
     label->setText(s);
 
     QSlider *slider = findChild<QSlider*> ("progressSlider");
-    slider->setRange(0, m_player->duration());
-    slider->setValue(pos);
-
-}
-
-void MainWindow::on_stopButton_clicked() {
-    m_player->stop();
+    slider->setValue(100 * ((float)pos / m_player->duration()));
 }
 
 void MainWindow::on_pauseButton_clicked() {
     m_player->pause();
 }
 
-void MainWindow::on_setButton_clicked(){
+void MainWindow::on_setButton_clicked() {
+    m_player->setTempo( 1.0f);
+}
+
+void MainWindow::on_setButton2_clicked() {
+    m_player->setTempo( 0.5f);
+}
+
+void MainWindow::on_setButton3_clicked() {
     m_player->setTempo( 2.0f);
+}
+
+void MainWindow::on_progressSlider_sliderReleased() {
+    QSlider *slider = findChild<QSlider*> ("progressSlider");
+    int value = slider->value();
+    if(value >= 0 && value < 100) {
+        int pos = m_player->duration() * ((float)value / 100);
+        m_player->setPosition(pos);
+    }
 }

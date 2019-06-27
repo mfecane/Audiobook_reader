@@ -10,9 +10,14 @@
 #include <QMediaPlayer>
 
 #include "SoundTouchDLL.h"
+#include "audiostream.h"
 
-#define BUFF_SIZE 13440
+//#define BUFF_SIZE 13440
+//#define SMALLBUFF_SIZE 90000
+//#define NOTIFY_INTERVAL 512
+//#define OUTBUFFERSIZE 30000
 //6720
+
 
 class Player : public QObject
 {
@@ -20,7 +25,6 @@ class Player : public QObject
 public:
 
     explicit Player(QObject *parent = nullptr);
-    ~Player();
 
     void play();
     void stop();
@@ -34,20 +38,17 @@ public:
     int duration();
 
     void setTempo(float t);
+    void setPosition(int pos);
 
 signals:
 
     void positionChanged(int pos);
 
-public slots:
-
-    void bufferReady();
-    void OnAudioNotify();
-    void onError(QAudioDecoder::Error err);
-
 private slots:
 
     void handleStateChanged(QAudio::State state);
+    void timeout();
+    void finished();
 
 private:
 
@@ -71,6 +72,9 @@ private:
     int channels;
     int m_jumpamount;
     float m_tempo;
+    QMutex m_mux;
 
     QByteArray m_samplebuffer;
+    QByteArray m_smallbuffer;
+    AudioStream* m_audioFileStream;
 };

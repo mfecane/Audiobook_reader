@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "audiostream.h"
 #include "player.h"
 
 #include <QMainWindow>
@@ -32,9 +33,16 @@ private slots:
 
     void on_setButton_clicked();
 
+    void on_setButton2_clicked();
+
+    void on_setButton3_clicked();
+
+    void on_progressSlider_sliderReleased();
+
 private:
     Ui::MainWindow *ui;
     Player* m_player;
+    int m_position;
 };
 
 #endif // MAINWINDOW_H

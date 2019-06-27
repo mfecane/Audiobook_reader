@@ -241,6 +241,7 @@ Makefile: test_ui.pro ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\win32-msvc\qmake.co
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\qt_config.prf \
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\win32-msvc\qmake.conf \
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\spec_post.prf \
+		.qmake.stash \
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\exclusive_builds.prf \
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\common\msvc-version.conf \
 		..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\toolchain.prf \
@@ -436,6 +437,7 @@ Makefile: test_ui.pro ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\win32-msvc\qmake.co
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\qt_config.prf:
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\win32-msvc\qmake.conf:
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\spec_post.prf:
+.qmake.stash:
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\exclusive_builds.prf:
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\common\msvc-version.conf:
 ..\..\..\Qt\5.12.2\msvc2017_64\mkspecs\features\toolchain.prf:

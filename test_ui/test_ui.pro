@@ -26,11 +26,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        audiostream.cpp \
         main.cpp \
         mainwindow.cpp \
         player.cpp
 
 HEADERS += \
+        audiostream.h \
         mainwindow.h \
         player.h
 
