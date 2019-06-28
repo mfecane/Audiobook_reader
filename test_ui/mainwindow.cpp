@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     m_player = new Player(this);
+    m_player->setFile("file.mp3");
     connect(m_player, SIGNAL(positionChanged(int)), this, SLOT(positionChanged(int)));
 }
 
@@ -15,8 +16,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::on_playButton_clicked() {
-    m_player->play();
-    m_player->play();
+    m_player->start();
 }
 
 void MainWindow::on_stopButton_clicked() {

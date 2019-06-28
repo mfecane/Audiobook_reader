@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "audiostream.h"
 #include "player.h"
 
 #include <QMainWindow>

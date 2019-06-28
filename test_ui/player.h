@@ -1,81 +1,86 @@
 #pragma once
 
 #include <QAudioDecoder>
-#include <QAudioOutput>
-#include <QObject>
 #include <QBuffer>
+#include <QIODevice>
 #include <QMutex>
 #include <QTimer>
-#include <QThread>
 #include <QMediaPlayer>
+#include <QAudioOutput>
+#include <QFile>
 
 #include "SoundTouchDLL.h"
-#include "audiostream.h"
 
-//#define BUFF_SIZE 13440
-//#define SMALLBUFF_SIZE 90000
-//#define NOTIFY_INTERVAL 512
-//#define OUTBUFFERSIZE 30000
-//6720
+#define BUFF_SIZE 13440
+#define SMALLBUFF_SIZE 60000
+#define NOTIFY_INTERVAL 512
+#define OUTBUFFERSIZE 30000
 
-
-class Player : public QObject
+class Player : public QIODevice
 {
-    Q_OBJECT
+Q_OBJECT
+
 public:
 
-    explicit Player(QObject *parent = nullptr);
+    Player(QObject *parent);
+    ~Player();
 
-    void play();
-    void stop();
-    void pause();
+    void start();
+    bool atEnd() const override;
 
-    void setFile(QString fileName);
+    void setTempo(float t);
     void back();
     void fwd();
-
     int position();
     int duration();
 
-    void setTempo(float t);
-    void setPosition(int pos);
+    bool setPosition(int newpos);
+    void pause();
+    void stop();
+
+    void setFile(QString filename);
 
 signals:
 
+    void onFinished();
     void positionChanged(int pos);
+
+protected:
+
+    qint64 readData(char* data, qint64 maxlen) override;
+    qint64 writeData(const char* data, qint64 len) override;
 
 private slots:
 
-    void handleStateChanged(QAudio::State state);
+    void bufferReady();
+    void onError(QAudioDecoder::Error err);
+    void decodingFinished();
+    void checkSmallBuffer();
     void timeout();
-    void finished();
-    void stopAudio();
+    void handleStateChanged(QAudio::State state);
 
 private:
 
-    void tryWritingSomeSampleData();
     QByteArray soundTouch(QByteArray a);
+    void clear();
+    void clearSoundtouch();
+    void initSoundtouch();
 
-    QAudioDeviceInfo m_deviceinfo;
-    QAudioFormat m_format;
-    QAudioDecoder* m_decoder;
     QAudioOutput* m_audio;
-    QIODevice* m_device;
-
-    HANDLE handle;
-
-    QTimer m_timer;
-    int bytepos;
-    int m_position;
-    int m_duration;
-    QMediaPlayer::State m_state;
-
-    int channels;
-    int m_jumpamount;
-    float m_tempo;
-    QMutex m_mux;
-
-    QByteArray m_samplebuffer;
+    QByteArray m_data;
     QByteArray m_smallbuffer;
-    AudioStream* m_audioStream;
+    QAudioDecoder* m_decoder;
+    QAudioFormat m_format;
+    HANDLE handle;
+    QBuffer m_outBuffer;
+    QBuffer m_inBuffer;
+    int m_bytepos;
+    QMutex m_mux;
+    QTimer m_timer;
+    float m_tempo;
+    int m_jumpamount;
+    QMediaPlayer::State m_state;
+    QString m_filename;
+
+    bool isDecodingFinished;
 };
