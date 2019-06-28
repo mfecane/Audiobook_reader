@@ -19,8 +19,9 @@ Q_OBJECT
 
 public:
 
-    AudioStream(QAudioFormat format);
+    AudioStream(QAudioFormat format, QObject *parent);
     ~AudioStream();
+
     void start(QString fileName);
     bool atEnd() const override;
 

@@ -1,6 +1,6 @@
 #include "audiostream.h"
 
-AudioStream::AudioStream(QAudioFormat format):
+AudioStream::AudioStream(QAudioFormat format, QObject *parent = nullptr) : QIODevice(parent),
     m_format(format),
     m_sBuffer(&m_smallbuffer),
     m_outBuffer(&m_data),
@@ -25,19 +25,23 @@ AudioStream::AudioStream(QAudioFormat format):
     soundtouch_setChannels(handle, m_format.channelCount());
 
     connect(m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
-    connect(m_decoder, SIGNAL(decodingFinished()), this, SLOT(decodingFinished()));
+    connect(m_decoder, SIGNAL(finished()), this, SLOT(decodingFinished()));
     connect(m_decoder, SIGNAL(error(QAudioDecoder::Error)), this, SLOT(onError(QAudioDecoder::Error)));
     connect(&m_timer, SIGNAL(timeout()), this, SLOT(checkSmallBuffer()));
 }
 
 qint64 AudioStream::readData(char *data, qint64 maxlen) {
-    //qDebug() << "asking for more";
+    qDebug() << "asking for more" << maxlen;
 
     if(maxlen > 0) {
 
         if (atEnd()) {
             qDebug() << "atEnd" ;
-            //emit onFinished(); //<< crash here
+            setOpenMode(QIODevice::NotOpen);
+            //close();
+//            emit onFinished(); //<< crash here
+//            emit aboutToClose();
+//            emit readChannelFinished();
             return -1;
         }
 
@@ -141,10 +145,10 @@ void AudioStream::checkSmallBuffer() {
         int bytesneeded = qMin(SMALLBUFF_SIZE - m_smallbuffer.size(),
                                m_data.size() - m_bytepos); // bytes we can put into smallbuff
 
-        if (bytesneeded < 5000) {
-            m_mux.unlock();
-            return;
-        }
+//        if (bytesneeded < 5000) {
+//            m_mux.unlock();
+//            return;
+//        }
         QByteArray in = m_outBuffer.read(bytesneeded);
         m_bytepos += bytesneeded;
         //m_data.mid(m_bytepos, bytesneeded);

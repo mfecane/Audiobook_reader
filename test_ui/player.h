@@ -49,6 +49,7 @@ private slots:
     void handleStateChanged(QAudio::State state);
     void timeout();
     void finished();
+    void stopAudio();
 
 private:
 
@@ -76,5 +77,5 @@ private:
 
     QByteArray m_samplebuffer;
     QByteArray m_smallbuffer;
-    AudioStream* m_audioFileStream;
+    AudioStream* m_audioStream;
 };
