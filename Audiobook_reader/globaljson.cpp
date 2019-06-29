@@ -1,8 +1,10 @@
 #include "globaljson.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QDebug>
 
 GlobalJSON* GlobalJSON::m_instance = nullptr;
 
@@ -50,20 +52,19 @@ void GlobalJSON::setBook(QJsonObject currentBookObject, QString folder) {
     m_mux.unlock();
 }
 
-bool GlobalJSON::saveJSON()
-{
+bool GlobalJSON::saveJSON() {
     QFile saveFile(m_path);
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
         return false;
     }
     QJsonDocument saveDoc(m_root);
-    saveFile.write(saveDoc.toJson());
+    saveFile.write(saveDoc.toJson()); // TODO: uncomment
+
     return true;
 }
 
-bool GlobalJSON::loadJSON()
-{
+bool GlobalJSON::loadJSON() {
     QFile loadFile(m_path);
     if (!loadFile.open(QIODevice::ReadOnly)) {
         qWarning("Couldn't open save file.");

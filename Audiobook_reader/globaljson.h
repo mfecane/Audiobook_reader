@@ -7,7 +7,7 @@ class GlobalJSON
 {
 public:
     GlobalJSON() {
-        m_path = "save.json";
+        m_path = "save1.json";
     }
 
     static GlobalJSON* getInstance() {

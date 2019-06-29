@@ -48,12 +48,11 @@ class BackEnd : public QObject
     Q_PROPERTY(QString rootPath READ rootPath WRITE setRootPath NOTIFY rootPathChanged)
     Q_PROPERTY(QString rootPathUrl READ rootPathUrl WRITE setRootPathUrl NOTIFY rootPathChanged)
     Q_PROPERTY(QList<QObject*> bookFileList READ bookFileList NOTIFY bookFileListChanged)
-    Q_PROPERTY(int currentBookFile READ currentBookFile WRITE setCurrentBookFile NOTIFY currentBookFileChanged)
+    Q_PROPERTY(int currentBookFileIndex READ currentBookFileIndex WRITE setCurrentBookFileIndex NOTIFY currentBookFileIndexChanged)
     Q_PROPERTY(AudioBookFileList* audioBookFileList READ audioBookFileList NOTIFY audioBookFileListChanged)
 
 public:
     explicit BackEnd(QObject *parent = nullptr);
-    ~BackEnd();
 
     static QObject *qmlInstance(QQmlEngine *engine, QJSEngine *scriptEngine) {
         Q_UNUSED(engine);
@@ -78,15 +77,7 @@ public:
         return s;
     }
 
-    void setCurrentFolder(QString value) {
-        QDir d = QDir(value);
-        if(d.exists() && !value.isEmpty()) {
-            openAudioBook( d.absolutePath());
-            emit currentFolderChanged();
-        }
-    }
-
-    void setFileName(QString value);
+    void setCurrentFolder(QString value);
 
     QString FileName() {return m_currentFileName;}
 
@@ -97,15 +88,9 @@ public:
         return u;
     }
 
-    void setFileUrl(QUrl u) {
-        QFile f(u.toLocalFile());
-        QString s = f.fileName();
-        setFileName(s);
-    }
-
     bool isPlaying() {
         //return m_player.state() == QMediaPlayer::PlayingState;
-        return m_myplayer.state() == QMediaPlayer::PlayingState;
+        return m_player.state() == QMediaPlayer::PlayingState;
     }
 
     qreal fileProgress() {
@@ -115,28 +100,6 @@ public:
             return r;
         } else {
             return 0;
-        }
-    }
-
-    void loadCurrentPos() {
-        m_currentPos = 0;
-        for(const QPair<QString, qint64>& p : m_fileTimes) {
-            if(p.first == m_currentFileName) {
-                m_currentPos = p.second;
-            }
-        }
-    }
-
-    void saveCurrentPos() {
-        bool success = false;
-        for (int i = 0; i < m_fileTimes.size(); ++i) {
-            if (m_fileTimes[i].first == m_currentFileName) {
-                m_fileTimes[i].second = m_currentPos;
-                success = true;
-            }
-        }
-        if(!success) {
-            m_fileTimes.append(FileTimePair(m_currentFileName, m_currentPos));
         }
     }
 
@@ -167,11 +130,11 @@ public:
         return m_bookFileList;
     }
 
-    int currentBookFile() {
+    int currentBookFileIndex() {
         return m_currentBookFile;
     }
 
-    void setCurrentBookFile(int value);
+    void setCurrentBookFileIndex(int value);
 
     AudioBookFileList* audioBookFileList() {
         if(m_audiobook == nullptr) {
@@ -186,11 +149,6 @@ public:
 
     void openAudioBook(QString folder);
 
-    void playCurrentFile () {
-
-    }
-
-
 signals:
 
     void currentFolderChanged();
@@ -198,7 +156,7 @@ signals:
     void fileProgressChanged();
     void rootPathChanged();
     void bookFileListChanged();
-    void currentBookFileChanged();
+    void currentBookFileIndexChanged();
     void audioBookFileListChanged();
 
 public slots:
@@ -213,21 +171,11 @@ public slots:
     void jumpBack();
 
     void speedUp();
-    void setFileSlot(QString value) {
-        QFileInfo fi(value);
-        if(fi.exists()) {
-            QString s = fi.fileName();
-            setFileName(s);
-        }
-    }
-    void positionChangedSlot(qint64 pos){
-        Q_UNUSED(pos)
-        emit fileProgressChanged();
-    }
+    void positionChangedSlot(int pos);
     void isPlayingSlot(QMediaPlayer::State state);
-    void mediaStatusSlot(QMediaPlayer::MediaStatus status);
     void autoSave();
     void autoLoad();
+    void onFinishedSlot();
 
 private:
     
@@ -240,53 +188,27 @@ private:
     void readFileJson(const QJsonObject &fileObject);
     void writeBookArrayJson();
     void readBookArrayJson();
+
     void writeCurrentJson();
     void readCurrentJson(QString &savedFolder, QString &savedFile);
-    //void fillBookFileList();
+
     void setupAutosave();
 
     static BackEnd* m_instance;
     QString m_currentFolder;
     QString m_currentFileName;
     qint64 m_currentPos;
-    QMediaPlayer m_player;
+    Player m_player;
     QTimer* m_autoSaveTimer;
     QSettings m_settings;
     QJsonObject m_jsonRoot;
     QString m_jsonFileName = "save.json";
     QMutex muxJson;
-    QVector<FileTimePair> m_fileTimes;
     QString m_rootPath;
     QList<QObject*> m_bookFileList;
     int m_currentBookFile;
     AudioBook* m_audiobook;
     AudioBookFileList* m_audiobookFileList;
     void setMedia();
-    Player m_myplayer;
+    void closeAudioBook();
 };
-
-//class BookFile : public QObject {
-//    Q_OBJECT
-
-//    Q_PROPERTY(QString name READ name NOTIFY nameChanged)
-
-//public:
-//    BookFile(QString s, qint64 i) : QObject() {
-//        m_fileName = s;
-//        m_size = i;
-//    }
-
-//    QString name(){
-//        return m_fileName;
-//    }
-
-//signals:
-
-//    void nameChanged();
-
-//private:
-
-//    QString m_fileName;
-//    qint64 m_size;
-
-//};

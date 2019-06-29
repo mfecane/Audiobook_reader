@@ -11,5 +11,15 @@
         <file>Components/Settings.qml</file>
         <file>Components/Playlist.qml</file>
         <file>Components/OpenFolderDialog.qml</file>
+        <file>images/gear.png</file>
+        <file>images/jmp_back.png</file>
+        <file>images/jmp_back_x2.png</file>
+        <file>images/jmp_fwd.png</file>
+        <file>images/jmp_fwd_x2.png</file>
+        <file>images/minus.png</file>
+        <file>images/next.png</file>
+        <file>images/play.png</file>
+        <file>images/plus.png</file>
+        <file>images/prev.png</file>
     </qresource>
 </RCC>

@@ -11,14 +11,7 @@ Rectangle {
         anchors.fill: parent
         clip: true
         model: BackEnd.audioBookFileList
-        //model: BackEnd.bookFileList
-        currentIndex: BackEnd.currentBookFile // TODO: fix this
-//            FolderListModel {
-//            id: folderModel
-//            showDirs: false
-//            folder: BackEnd.currentFolderUrl
-//            nameFilters: ["*.mp3"]
-//        }
+        //currentIndex: BackEnd.currentBookFile // TODO: fix this
         delegate: ItemDelegate {
             width: parent.width
             text: model.text

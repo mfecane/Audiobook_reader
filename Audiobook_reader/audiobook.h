@@ -22,10 +22,12 @@ public:
     qint64 pos;
 };
 
-class AudioBook
+class AudioBook : public QObject
 {
+    Q_OBJECT
+
 public:
-    AudioBook(QString path);
+    AudioBook(QString path, QObject* parent = nullptr);
     
     void openBook();
     void closeBook();
@@ -37,37 +39,14 @@ public:
         return m_data.size();
     }
 
-    bool setCurrentFileIdex(int i) {
-        if(m_currentFileIndex == i) {
-            return false;
-        }
-        m_currentFileIndex = i;
-        return true;
-    }
+    bool setCurrentFileIdex(int i);
 
-    const AudioBookFile getCurrentFile() {
-        return fileAt(m_currentFileIndex);
-    }
+    bool setCurrentFileName (QString filename);
 
-    const QString getCurrentFilePath() {
-        QDir d;
-        QString path = m_path + d.separator() + getCurrentFile().fileName;
-        QFile f(path);
-        if(f.exists()) {
-            return path;
-        } else {
-            return QString("");
-        }
-    }
-
-    const QUrl getCurrentFilePathUrl() {
-        QDir d;
-        QUrl u = QUrl::fromLocalFile(getCurrentFilePath());
-        return u;
-    }
-
+    AudioBookFile getCurrentFile();
+    QString getCurrentFilePath();
     qint64 getCurrentFilePos() {
-        return getCurrentFile().pos;
+        getCurrentFile().pos;
     }
 
     const AudioBookFile fileAt(int i){
@@ -75,17 +54,14 @@ public:
     }
 
     void setCurrentPos(qint64 i) {
-        m_data[m_currentFileIndex].pos = i;
+        m_data[m_index].pos = i;
     }
 
-    void setNext() {
-        if(m_currentFileIndex >= m_data.size()) return;
-        ++m_currentFileIndex;
-    }
+    bool setNext();
+    bool setPrevious();
 
-    void setPrevious() {
-        if(m_currentFileIndex <= 0) return;
-        --m_currentFileIndex;
+    QString getPath() {
+        return m_path;
     }
 
 private:
@@ -95,9 +71,8 @@ private:
     BackEnd *backEnd();
 
     QString m_path;
-    int m_currentFileIndex = -1;
+    int m_index;
     QVector<AudioBookFile> m_data;
-    Player m_player;
 };
 
 

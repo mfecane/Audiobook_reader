@@ -7,7 +7,9 @@
 #include "backend.h"
 
 
-AudioBook::AudioBook(QString path) {
+AudioBook::AudioBook(QString path, QObject *parent) : QObject (parent),
+    m_index(0)
+{
     m_path = path;
 
     QDir d(path);
@@ -16,19 +18,14 @@ AudioBook::AudioBook(QString path) {
     QStringList filters;
     filters << "*.mp3";
     d.setNameFilters(filters);
-    if(!m_data.isEmpty()) {
-        m_data.clear();
-    }
     QFileInfoList list = d.entryInfoList();
-    m_currentFileIndex = -1;
     for(int i = 0; i < list.size(); ++i) {
         QString sname = list.at(i).fileName();
         m_data.append(AudioBookFile(sname));
-//        if(sname == m_currentFileName) {
-//            m_currentFileIndex = i;
-//        }
     }
-    //TODO: setCurrentFile
+    m_index = 0;
+    // TODO: setCurrentFile
+    // TODO: fileSizes
 }
 
 void AudioBook::readJson() {
@@ -48,6 +45,9 @@ void AudioBook::readJson() {
             }
         }
     }
+    if(bookObject.contains("current") && bookObject["current"].isString()) {
+        setCurrentFileName(bookObject["current"].toString());
+    }
 }
 
 void AudioBook::writeJson() {
@@ -60,8 +60,59 @@ void AudioBook::writeJson() {
         fileArray.append(fileObject);
     }
     bookObject["files"] = fileArray;
+    bookObject["current"] = getCurrentFile().fileName;
     bookObject["url"] = m_path;
     GlobalJSON::getInstance()->setBook(bookObject, m_path);
+}
+
+bool AudioBook::setCurrentFileIdex(int i) {
+    if(m_index == i) {
+        return false;
+    }
+    qDebug() << "set current file index" << i;
+    if(i >=0 && i < m_data.size()) {
+        m_index = i;
+        return true;
+    }
+    else return false;
+}
+
+bool AudioBook::setCurrentFileName(QString filename) {
+    for (int i = 0; i < m_data.size(); ++i) {
+        if ( m_data.at(i).fileName == filename) {
+            setCurrentFileIdex(i);
+            qDebug() << "set current file name" << filename;
+            return true;
+        }
+    }
+    return false;
+}
+
+AudioBookFile AudioBook::getCurrentFile() {
+    return fileAt(m_index);
+}
+
+QString AudioBook::getCurrentFilePath() {
+    QDir d;
+    QString path = m_path + d.separator() + getCurrentFile().fileName;
+    QFile f(path);
+    if(f.exists()) {
+        return path;
+    } else {
+        return QString("");
+    }
+}
+
+bool AudioBook::setNext() {
+    if(m_index >= m_data.size()) return false;
+    ++m_index;
+    return true;
+}
+
+bool AudioBook::setPrevious() {
+    if(m_index <= 0) return false;
+    --m_index;
+    return true;
 }
 
 void AudioBook::setFileTime(QString fileName, qint64 pos) {
