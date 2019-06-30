@@ -11,6 +11,7 @@ Player::Player(QObject *parent) : QIODevice(parent),
     m_format = device.preferredFormat();
 
     isDecodingFinished = false;
+    m_afterDecodingPos = 0;
     m_decoder = new QAudioDecoder(this);
     m_decoder->setAudioFormat(m_format);
 
@@ -150,24 +151,19 @@ int Player::position() {
             / (m_format.sampleRate() / 1000)
             / (m_format.sampleSize() / 8)
             / m_format.channelCount();
-    //qDebug() << "pos" << pos;
     return pos;
 }
 
 bool Player::setPosition(int newpos) {
-
-    qDebug() << "isDecodingFinished" << isDecodingFinished;
-    qDebug() << "newpos" << newpos;
-
     if(newpos >= 0 && newpos < m_data.size()) {
         m_bytepos = newpos * (m_format.sampleRate() / 1000)
                 * (m_format.sampleSize() / 8)
                 * m_format.channelCount();
-        //qDebug() << "set Pos" << m_bytepos
-        //         << " of " << m_data.size();
         return true;
     } else if(!isDecodingFinished) {
         m_afterDecodingPos = newpos;
+        qDebug() << "after decoding pos" << m_afterDecodingPos;
+        return true;
     } else {
         return false;
     }
@@ -192,9 +188,7 @@ void Player::setFile(QString filename) {
     if(f.exists()) {
         m_filename = filename;
         stop();
-
         m_decoder->setSourceFilename(m_filename);
-
         isDecodingFinished = false;
         if (!m_inBuffer.open(QIODevice::WriteOnly)) {
             return;
@@ -204,22 +198,12 @@ void Player::setFile(QString filename) {
 }
 
 qint64 Player::readData(char *data, qint64 maxlen) {
-    //qDebug() << "asking for more" << maxlen;
-
     if(maxlen > 0) {
-
         if (atEnd()) {
-            //qDebug() << "atEnd" ;
-            //setOpenMode(QIODevice::NotOpen);
             stop();
-            //close();
-            //            emit onFinished(); //<< crash here
-            //            emit aboutToClose();
-            //            emit readChannelFinished();
             emit onFinished();
             return -1;
         }
-
         checkSmallBuffer();
         int readlen = qMin( (int)maxlen, m_smallbuffer.size());
         memset(data, 0, maxlen);
@@ -265,17 +249,7 @@ void Player::checkSmallBuffer() {
         m_mux.lock();
         m_outBuffer.seek(m_bytepos);
         int bytesneeded = qMin(SMALLBUFF_SIZE - m_smallbuffer.size(),
-                               m_data.size() - m_bytepos); // bytes we can put into smallbuff
-
-        //Commenting this may cause performance issues
-        //        if (bytesneeded < 5000) {
-        //            m_mux.unlock();
-        //            return;
-        //        }
-
-        //qDebug() << "in soundtuch bytes" << bytesneeded
-        //         << " bytepos " << m_bytepos;
-
+                               m_data.size() - m_bytepos);
         m_smallbuffer.append(soundTouch(m_outBuffer.read(bytesneeded)));
         m_bytepos += bytesneeded;
         m_mux.unlock();
@@ -289,7 +263,6 @@ qint64 Player::writeData(const char *data, qint64 len) { // delete
 }
 
 bool Player::atEnd() const {
-    //qDebug() << "outbuffer size" << m_outBuffer.size() - m_outBuffer.pos();
     return m_outBuffer.size()
             && m_outBuffer.atEnd()
             && isDecodingFinished;
@@ -305,7 +278,6 @@ QByteArray Player::soundTouch(QByteArray a) {
     samplesize = m_format.sampleSize() / 8;
 
     numSamples = a.size() / samplesize / channels;
-    //numSamples = numSamples / m_tempo - 16;
 
     outNumSamples = 0;
     maxSamples = BUFF_SIZE / 2;
@@ -342,33 +314,28 @@ void Player::bufferReady() { // SLOT
     const int length = buffer.byteCount();
     const char *data = buffer.constData<char>();
     m_inBuffer.write(data, length);
-    //checkSmallBuffer();
 }
 
 void Player::decodingFinished() { // SLOT
     if (m_afterDecodingPos != 0) {
         setPosition(m_afterDecodingPos);
+        qDebug() << "decoding finished, setting pos to" << m_afterDecodingPos;
     }
     isDecodingFinished = true;
 }
 
 void Player::timeout() {
-    //qDebug() << "audio state:" << m_audio->state();
     emit positionChanged(position());
 }
-
 
 void Player::handleStateChanged(QAudio::State state) {
     switch (state) {
     case QAudio::IdleState:
-        //qDebug() << "m_audio error " << m_audio->error();
-        //m_audio->stop();
-        //m_audio->reset();
         break;
 
     case QAudio::StoppedState:
         if (m_audio->error() != QAudio::NoError) {
-            // Error handling
+            qDebug() << "Audio error" << m_audio->error();
         }
         stop();
         break;

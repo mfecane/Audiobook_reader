@@ -18,85 +18,77 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredWidth: rootId.width-40
         }
-//        Rectangle {
-//            Layout.alignment: Qt.AlignHCenter | Qt.AlignCenter
-//            Layout.fillHeight: true
-//            //Layout.fillWidth: true
-//            color: "gold"
-            RowLayout {
-                //anchors.fill: parent
-                Layout.preferredWidth: 250
-                Layout.alignment: Qt.AlignVCenter
-                Layout.fillHeight: true
-                Button {
-                    Layout.alignment:  Qt.AlignVCenter
-                    contentItem: Image {
-                        source: "qrc:/images/prev.png"
+        Label {
+            Layout.alignment: Qt.AlignCenter
+            text: "0:20:20 / 03:10:50"
+            color: "white"
+            font.pointSize: 14
+            font.weight: Font.DemiBold
+        }
+        RowLayout {
+            Layout.alignment: Qt.AlignCenter
+            Layout.fillHeight: true
+            spacing:20
+            ImageButton {
+                Layout.alignment:  Qt.AlignVCenter
+                src: "qrc:/images/prev.png"
+                onClicked: BackEnd.prev()
+            }
+            PlayButton {
+                height:width
+                onClicked: {
+                    if(!isRecording) {
+                        BackEnd.play()
+                        isRecording = true
                     }
-                    onClicked: BackEnd.prev()
-                    background:
-                        Item{ }
-                }
-                Rectangle {
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    color: "transparent"
-                    Button{
-                        text: "Play"
-                        anchors.centerIn: parent
-                        visible: BackEnd.isPlaying ? false : true
-                        onClicked: BackEnd.play()
-                        contentItem: Image {
-                            source: "qrc:/images/play.png"
-                        }
-                        background:
-                            Item{ }
+                    else {
+                        BackEnd.stop()
+                        isRecording = false
                     }
-                    Button{
-                        text: "Stop"
-                        anchors.centerIn: parent
-                        visible: BackEnd.isPlaying ? true : false
-                        onClicked: BackEnd.stop()
-                        contentItem: Image {
-                            source: "qrc:/images/play.png"
-                        }
-                        background:
-                            Item{ }
-                    }
-                }
-                Button {
-                    Layout.alignment:  Qt.AlignVCenter
-                    contentItem: Image {
-                        source: "qrc:/images/next.png"
-                    }
-                    onClicked: BackEnd.next()
-                    background:
-                        Item{ }
                 }
             }
-//        }
+            ImageButton {
+                Layout.alignment:  Qt.AlignVCenter
+                src: "qrc:/images/next.png"
+                onClicked: BackEnd.next()
+            }
+        }
         RowLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignCenter
-            Button {
-                text:"prev"
-                onClicked: BackEnd.prev()
+            ImageButton {
+                src: "qrc:/images/jmp_back_x2.png"
+                onClicked: BackEnd.jumpBack(60)
             }
-            Button {
-                text:"<<"
-                onClicked: BackEnd.jumpBack()
+            ImageButton {
+                src: "qrc:/images/jmp_back.png"
+                onClicked: BackEnd.jumpBack(10)
             }
-            Button {
-                text:"a"
-                onClicked: BackEnd.speedUp()
+            ImageButton {
+                src: "qrc:/images/jmp_fwd.png"
+                onClicked: BackEnd.jumpForeward(10)
             }
-            Button {
-                text:">>"
-                onClicked: BackEnd.jumpForeward()
+            ImageButton {
+                src: "qrc:/images/jmp_fwd_x2.png"
+                onClicked: BackEnd.jumpForeward(60)
             }
-            Button {
-                text:"fwd"
-                onClicked: BackEnd.next()
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignCenter
+            ImageButton {
+                src: "qrc:/images/minus.png"
+                onClicked: BackEnd.decreaseTempo()
+            }
+            Label {
+                text: BackEnd.tempo
+                color: "white"
+                font.pointSize: 18
+                font.weight: Font.DemiBold
+            }
+            ImageButton {
+                src: "qrc:/images/plus.png"
+                onClicked: BackEnd.increaseTempo()
             }
         }
 
@@ -108,5 +100,18 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredWidth: rootId.width-40
         }
+    }
+    Button {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: 50
+        contentItem:
+            Image {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            id: tabimg
+            source: "qrc:/images/tab_button.png"
+        }
+        background :Item{}
     }
 }

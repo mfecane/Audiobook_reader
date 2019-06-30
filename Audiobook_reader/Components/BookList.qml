@@ -7,17 +7,12 @@ import io.qt.examples.backend 1.0
 ListView {
     id: booksView
     width: parent.width
-    model: FolderListModel {
-        id: folderBookModel
-        showDirs: true
-        showFiles: false
-        folder: BackEnd.rootPathUrl
-    }
+    model:BackEnd.audioBookList
     delegate: ItemDelegate {
         width: parent.width
-        text: model.fileName
+        text: model.text
         onClicked: booksView.currentIndex = index
     }
     ScrollBar.vertical: ScrollBar { }
-    onCurrentItemChanged: BackEnd.currentFolder = folderBookModel.get(currentIndex, "filePath")
+    onCurrentItemChanged: BackEnd.setCurrentAudiobookIndex(currentIndex)
 }

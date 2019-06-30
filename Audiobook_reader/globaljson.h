@@ -17,7 +17,7 @@ public:
         return m_instance;
     }
 
-    QJsonObject getRoot() {
+    QJsonObject& getRoot() {
         return m_root;
     }
 
@@ -34,5 +34,7 @@ private:
     QString m_path;
     QJsonObject m_root;
     QMutex m_mux;
+
+    bool enableSave = true;
 };
 

@@ -19,6 +19,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         audiobook.cpp \
+        audiobookfile.cpp \
+        audiobooklist.cpp \
         backend.cpp \
         globaljson.cpp \
         main.cpp \
@@ -40,6 +42,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     audiobook.h \
+    audiobookfile.h \
+    audiobooklist.h \
     backend.h \
     globaljson.h \
     player.h

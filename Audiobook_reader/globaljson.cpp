@@ -53,15 +53,17 @@ void GlobalJSON::setBook(QJsonObject currentBookObject, QString folder) {
 }
 
 bool GlobalJSON::saveJSON() {
-    QFile saveFile(m_path);
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
-        return false;
+    if(enableSave) {
+        QFile saveFile(m_path);
+        if (!saveFile.open(QIODevice::WriteOnly)) {
+            qWarning("Couldn't open save file.");
+            return false;
+        }
+        QJsonDocument saveDoc(m_root);
+        saveFile.write(saveDoc.toJson());
+        saveFile.close();
+        return true;
     }
-    QJsonDocument saveDoc(m_root);
-    saveFile.write(saveDoc.toJson()); // TODO: uncomment
-
-    return true;
 }
 
 bool GlobalJSON::loadJSON() {

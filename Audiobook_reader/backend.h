@@ -11,26 +11,39 @@
 #include <QJsonObject>
 #include <QMutex>
 
+#include "audiobooklist.h"
 #include "player.h"
 
 class BookFile;
 class AudioBook;
 
-typedef QPair<QString, qint64> FileTimePair;
-
 class AudioBookFileList : public QAbstractListModel {
+
      Q_OBJECT
+
 public:
+
     enum BookFileRoles {
-        TextRole = Qt::UserRole +1
+        TextRole = Qt::UserRole +1,
+        progressRole
     };
+
     AudioBookFileList(AudioBook *audiobook);
+
     QHash<int, QByteArray> roleNames() const;
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
+
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+
     void setAudiobook(AudioBook* value) {
         m_audiobook = value;
     }
+
+public slots:
+
+    void playlistItemChanged();
+    void playlistChanged();
 
 private:
 
@@ -41,15 +54,17 @@ class BackEnd : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QString currentFolderUrl READ currentFolderUrl NOTIFY currentFolderChanged)
-    Q_PROPERTY(QString currentFolder READ currentFolder WRITE setCurrentFolder NOTIFY currentFolderChanged)
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
     Q_PROPERTY(qreal fileProgress READ fileProgress NOTIFY fileProgressChanged)
+
     Q_PROPERTY(QString rootPath READ rootPath WRITE setRootPath NOTIFY rootPathChanged)
     Q_PROPERTY(QString rootPathUrl READ rootPathUrl WRITE setRootPathUrl NOTIFY rootPathChanged)
-    Q_PROPERTY(QList<QObject*> bookFileList READ bookFileList NOTIFY bookFileListChanged)
-    Q_PROPERTY(int currentBookFileIndex READ currentBookFileIndex WRITE setCurrentBookFileIndex NOTIFY currentBookFileIndexChanged)
-    Q_PROPERTY(AudioBookFileList* audioBookFileList READ audioBookFileList NOTIFY audioBookFileListChanged)
+
+    Q_PROPERTY(int playlistIndex READ playlistIndex WRITE setPlaylistIndex NOTIFY playListIndexChanged)
+    Q_PROPERTY(AudioBookFileList* playlist READ playlist NOTIFY playlistChanged)
+
+    Q_PROPERTY(AudioBookList* audioBookList READ audioBookList NOTIFY audioBookListChanged)
+    Q_PROPERTY(QString tempo READ tempo NOTIFY tempoChanged)
 
 public:
     explicit BackEnd(QObject *parent = nullptr);
@@ -76,8 +91,6 @@ public:
         QString s = u.url();
         return s;
     }
-
-    void setCurrentFolder(QString value);
 
     QString FileName() {return m_currentFileName;}
 
@@ -109,8 +122,10 @@ public:
 
     void setRootPath(QString value) {
         m_rootPath = value;
+        m_audioBookList = new AudioBookList(value);
         m_settings.setValue("rootPath", value);
         emit rootPathChanged();
+        emit audioBookListChanged();
     }
 
     QString rootPathUrl() {
@@ -130,17 +145,19 @@ public:
         return m_bookFileList;
     }
 
-    int currentBookFileIndex() {
-        return m_currentBookFile;
+    int playlistIndex() {
+        if(m_audiobook == nullptr) return 0;
+        return m_audiobook->index();
     }
 
-    void setCurrentBookFileIndex(int value);
+    void setPlaylistIndex(int value);
+    void setPlaylistFile(QString fileName);
 
-    AudioBookFileList* audioBookFileList() {
+    AudioBookFileList* playlist() {
         if(m_audiobook == nullptr) {
             return nullptr;
         }
-        return m_audiobookFileList;
+        return m_playlist;
     }
 
     AudioBook* audioBook() {
@@ -149,6 +166,15 @@ public:
 
     void openAudioBook(QString folder);
 
+    AudioBookList* audioBookList() {
+        return m_audioBookList;
+    }
+
+    QString tempo() {
+        qreal value = m_tempoValues.at(m_tempo);
+        return QString::number(value, 'f', 2);
+    }
+
 signals:
 
     void currentFolderChanged();
@@ -156,42 +182,37 @@ signals:
     void fileProgressChanged();
     void rootPathChanged();
     void bookFileListChanged();
-    void currentBookFileIndexChanged();
-    void audioBookFileListChanged();
+    void audioBookListChanged();
+    void playListIndexChanged();
+    void playlistChanged();
+    void playlistItemChanged();
+    void tempoChanged();
 
 public slots:
 
-    void openBookFolder(QString value);
     void closeBookFolder();
     void play();
     void stop();
     void next();
     void prev();
-    void jumpForeward();
-    void jumpBack();
-
+    void jumpForeward(int sec);
+    void jumpBack(int sec);
     void speedUp();
     void positionChangedSlot(int pos);
     void isPlayingSlot(QMediaPlayer::State state);
     void autoSave();
     void autoLoad();
     void onFinishedSlot();
+    void setCurrentAudiobookIndex(int i);
+    void increaseTempo();
+    void decreaseTempo();
 
 private:
     
     bool loadJson();
     bool saveJson();
-
-    void writeBookJson(QJsonObject &bookObject);
-    void readBookJson(const QJsonObject &bookObject);
-    void writeFileJson(QJsonObject &fileObject);
-    void readFileJson(const QJsonObject &fileObject);
-    void writeBookArrayJson();
-    void readBookArrayJson();
-
     void writeCurrentJson();
     void readCurrentJson(QString &savedFolder, QString &savedFile);
-
     void setupAutosave();
 
     static BackEnd* m_instance;
@@ -208,7 +229,11 @@ private:
     QList<QObject*> m_bookFileList;
     int m_currentBookFile;
     AudioBook* m_audiobook;
-    AudioBookFileList* m_audiobookFileList;
-    void setMedia();
+    AudioBookFileList* m_playlist;
+    void updatePlayer();
     void closeAudioBook();
+    AudioBookList* m_audioBookList;
+    int m_tempo;
+    QVector<qreal> m_tempoValues;
+
 };

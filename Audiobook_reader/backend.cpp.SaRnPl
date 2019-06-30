@@ -25,23 +25,6 @@ BackEnd::BackEnd(QObject *parent) :
     m_audiobook(nullptr),
     m_playlist(nullptr)
 {
-    m_tempoValues.append(0.5);
-    m_tempoValues.append(0.6);
-    m_tempoValues.append(0.7);
-    m_tempoValues.append(0.8);
-    m_tempoValues.append(0.9);
-    m_tempoValues.append(1.0);
-    m_tempoValues.append(1.1);
-    m_tempoValues.append(1.2);
-    m_tempoValues.append(1.3);
-    m_tempoValues.append(1.4);
-    m_tempoValues.append(1.5);
-    m_tempoValues.append(1.6);
-    m_tempoValues.append(1.7);
-    m_tempoValues.append(1.8);
-    m_tempoValues.append(1.9);
-    m_tempoValues.append(2.0);
-    m_tempo = 5;
 
     QObject::connect (&m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
                       this, SLOT(isPlayingSlot(QMediaPlayer::State)));
@@ -73,22 +56,6 @@ void BackEnd::setCurrentAudiobookIndex(int i) { // for loading audiobook from li
     openAudioBook(path);
 }
 
-void BackEnd::increaseTempo() {
-    int index = m_tempo + 1;
-    if(index >= m_tempoValues.size()) return;
-    m_tempo = index;
-    m_player.setTempo(m_tempoValues.at(m_tempo));
-    emit tempoChanged();
-}
-
-void BackEnd::decreaseTempo() {
-    int index = m_tempo - 1;
-    if(index < 0) return;
-    m_tempo = index;
-    m_player.setTempo(m_tempoValues.at(m_tempo));
-    emit tempoChanged();
-}
-
 void BackEnd::openAudioBook(QString path) {
     QDir d(path);
     if(d.exists() && !path.isEmpty()) {
@@ -103,13 +70,6 @@ void BackEnd::openAudioBook(QString path) {
         m_audiobook = new AudioBook(path);
         m_audiobook->readFileSizes();
         m_playlist = new AudioBookFileList(m_audiobook);
-
-
-        QObject::connect (this, SIGNAL(playlistItemChanged()),
-                          m_playlist, SLOT(playlistItemChanged()));
-        QObject::connect (this, SIGNAL(playlistChanged()),
-                          m_playlist, SLOT(playlistChanged()));
-
         updatePlayer();
         emit currentFolderChanged();
         emit playlistChanged();
@@ -151,7 +111,6 @@ void BackEnd::setPlaylistIndex(int value) {
     if(m_audiobook->setCurrentFileIdex(value)) {
         updatePlayer();
         emit playListIndexChanged();
-        emit playlistChanged();
     }
 }
 
@@ -159,7 +118,6 @@ void BackEnd::setPlaylistFile(QString value) {
     if(m_audiobook != nullptr && m_audiobook->setCurrentFileName(value)) {
         updatePlayer();
         emit playListIndexChanged();
-        emit playlistChanged();
     }
 }
 
@@ -183,7 +141,6 @@ void BackEnd::next() {
     updatePlayer();
     play();
     emit playListIndexChanged();
-    emit playlistChanged();
 }
 
 void BackEnd::prev() {
@@ -191,19 +148,18 @@ void BackEnd::prev() {
     updatePlayer();
     play();
     emit playListIndexChanged();
-    emit playlistChanged();
 }
 
-void BackEnd::jumpForeward(int sec) {
-    m_player.jump(sec * 1000);
+void BackEnd::jumpForeward() {
+    m_player.jump(10000);
     // TODO: Try to get this to work
     //    while (m_player.jump(10000) != 0) {
     //        if(m_audiobook->setNext() == false) break;
     //    }
 }
 
-void BackEnd::jumpBack(int sec) {
-    m_player.jump(-sec * 1000);
+void BackEnd::jumpBack() {
+    m_player.jump(-10000);
 }
 
 void BackEnd::speedUp() {
@@ -213,7 +169,6 @@ void BackEnd::speedUp() {
 void BackEnd::positionChangedSlot(int pos){
     Q_UNUSED(pos)
     emit fileProgressChanged();
-    emit playlistItemChanged();
 }
 
 void BackEnd::isPlayingSlot(QMediaPlayer::State state) {
@@ -272,7 +227,6 @@ AudioBookFileList::AudioBookFileList(AudioBook *audiobook) :
 QHash<int, QByteArray> AudioBookFileList::roleNames() const {
     QHash<int, QByteArray> roles;
     roles[TextRole] = "text";
-    roles[progressRole] = "progress";
     return roles;
 }
 
@@ -282,29 +236,19 @@ int AudioBookFileList::rowCount(const QModelIndex &parent) const {
 }
 
 QVariant AudioBookFileList::data(const QModelIndex &index, int role) const {
+    Q_UNUSED(role);
     if(m_audiobook == nullptr) return "";
+
+
     switch(role) {
     case TextRole:
-        return m_audiobook->fileAt(index.row())->fileName();
+        QString s = m_audiobook->fileAt(index.row())->fileName();
+        return s;
+        break;
     case progressRole:
-        return m_audiobook->progressOf(index.row());
+        QString s = m_audiobook->fileAt(index.row())->progress();
+        return s;
+        break;
     }
-    return false;
-}
 
-void AudioBookFileList::playlistItemChanged() {
-    QModelIndex topLeft = createIndex(m_audiobook->index(), 0);
-    QModelIndex bottomRight = createIndex(m_audiobook->index(), 0);
-    QVector<int> roleVector;
-    roleVector << BookFileRoles::progressRole;
-    emit dataChanged(topLeft, bottomRight, roleVector);
-}
-
-
-void AudioBookFileList::playlistChanged() {
-    QModelIndex topLeft = createIndex(0, 0);
-    QModelIndex bottomRight = createIndex(m_audiobook->size()-1, 0);
-    QVector<int> roleVector;
-    roleVector << BookFileRoles::progressRole;
-    emit dataChanged(topLeft, bottomRight, roleVector);
 }

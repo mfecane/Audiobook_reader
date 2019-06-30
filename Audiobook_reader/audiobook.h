@@ -7,20 +7,9 @@
 #include <QUrl>
 
 #include "player.h"
+#include "audiobookfile.h"
 
 class BackEnd;
-
-struct AudioBookFile {
-public:
-    AudioBookFile(QString s = "") :
-        fileName(s),
-        size (0),
-        pos (0)
-    { }
-    QString fileName;
-    qint64 size;
-    qint64 pos;
-};
 
 class AudioBook : public QObject
 {
@@ -39,40 +28,61 @@ public:
         return m_data.size();
     }
 
-    bool setCurrentFileIdex(int i);
-
-    bool setCurrentFileName (QString filename);
-
-    AudioBookFile getCurrentFile();
-    QString getCurrentFilePath();
-    qint64 getCurrentFilePos() {
-        getCurrentFile().pos;
+    int index() {
+        return m_index;
     }
 
-    const AudioBookFile fileAt(int i){
+    bool setCurrentFileIdex(int i);
+
+    bool setCurrentFileName(QString filename);
+
+    const AudioBookFile* getCurrentFile();
+    QString getCurrentFilePath();
+    qint64 getCurrentFilePos() {
+        getCurrentFile()->pos();
+    }
+
+    const AudioBookFile* fileAt(int i){
         return m_data.at(i);
     }
 
+    qreal progressOf(int i);
+
     void setCurrentPos(qint64 i) {
-        m_data[m_index].pos = i;
+        m_data[m_index]->setPos(i);
     }
 
     bool setNext();
     bool setPrevious();
 
-    QString getPath() {
+    QString getPath() const {
         return m_path;
+    }
+
+    QString folderName() const {
+        QFileInfo fi(m_path);
+        return fi.fileName();
+    }
+
+    qreal progress();
+
+    void readFileSizes();
+
+    int size() {
+        return m_data.size();
     }
 
 private:
 
-    void setFileTime(QString fileName, qint64 pos);
+    void setFileTime(QString fileName, qint64 pos, bool overwrite = true);
 
     BackEnd *backEnd();
 
     QString m_path;
     int m_index;
-    QVector<AudioBookFile> m_data;
+    QVector<AudioBookFile*> m_data;
+    AudioBookFile *findFile(QString fileName);
+    QString getFilePath(int i);
 };
 
 

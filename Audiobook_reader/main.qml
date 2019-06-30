@@ -15,14 +15,14 @@ Window {
     width: 640
     height: 480
     minimumWidth: 300
-    minimumHeight: 480
+    minimumHeight: 640
     title: qsTr("Audiobook Reader")
 
     Settings {
-        //property alias x: window.x
-        //property alias y: window.y
-        //property alias width: window.width
-        //property alias height: window.height
+        property alias x: window.x
+        property alias y: window.y
+        property alias width: window.width
+        property alias height: window.height
     }
 
     RowLayout {
@@ -38,36 +38,35 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    color: "slategray"
+                    color: "white"
 
                     BookList {
                         id:booksPage
                         anchors.fill: parent
                         visible: true
                     }
-                    Settings {
-                        id:settingPage
+                    Ass {
+                        id:asspage
                         anchors.fill: parent
                         visible: false
                     }
                 }
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 60
-                    color: "khaki"
-                    Button {
-                        text:"settings"
+                    Layout.preferredHeight: 70
+                    color: "white"
+                    SettingsButton {
+                        width:parent.width
                         onClicked: {
-                            settingPage.visible = !settingPage.visible;
+                            asspage.visible = !asspage.visible;
                             booksPage.visible = !booksPage.visible
                         }
                     }
                 }
             }
-
         }
         Rectangle {
-            Layout.preferredWidth: 300
+            Layout.preferredWidth: 350
             Layout.fillHeight: true
             color: "blue"
             ColumnLayout {
@@ -75,7 +74,7 @@ Window {
                 spacing: 0
                 Player2 {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 300
+                    Layout.preferredHeight: 400
                 }
 
                 Playlist {
