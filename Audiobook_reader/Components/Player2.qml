@@ -14,13 +14,18 @@ Rectangle {
         spacing:10
 
         ProgressBar {
-            padding: 20
+            from: 0.0
+            to: 1.0
+            value: BackEnd.bookProgress
             Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: rootId.width-40
+            Layout.preferredWidth: rootId.width - 40
+            Layout.topMargin: 20
+            Layout.rightMargin: 20
+            Layout.leftMargin: 20
         }
         Label {
             Layout.alignment: Qt.AlignCenter
-            text: "0:20:20 / 03:10:50"
+            text: BackEnd.currentTime
             color: "white"
             font.pointSize: 14
             font.weight: Font.DemiBold
@@ -96,9 +101,11 @@ Rectangle {
             from: 0.0
             to: 1.0
             value: BackEnd.fileProgress
-            padding: 20
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredWidth: rootId.width-40
+            Layout.bottomMargin: 20
+            Layout.rightMargin: 20
+            Layout.leftMargin: 20
         }
     }
     Button {

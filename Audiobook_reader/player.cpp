@@ -4,6 +4,7 @@
 #include <QFile>
 
 Player::Player(QObject *parent) : QIODevice(parent),
+    handle(nullptr),
     m_outBuffer(&m_data),
     m_inBuffer(&m_data)
 {
@@ -176,10 +177,10 @@ int Player::duration() {
 void Player::setTempo(float t) {
     if(m_tempo != t && t >= 0.5f && t <= 2.0f) {
         m_tempo = t;
-        clearSoundtouch();
-
-        //reinitialize soundtouch();
-        initSoundtouch();
+        if(handle != nullptr) {
+            clearSoundtouch();
+            initSoundtouch();
+        }
     }
 }
 

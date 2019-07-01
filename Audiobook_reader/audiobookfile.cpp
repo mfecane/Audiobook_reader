@@ -16,6 +16,6 @@ void AudioBookFile::metaDataChanged(bool b) {
     if(m_size == 0 && size != 0) {
         m_size = size;
     }
-    qDebug() << "duration from metadata" << size;
+    //delete m_player;
 }
 

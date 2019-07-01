@@ -19,7 +19,7 @@ class AudioBook;
 
 class AudioBookFileList : public QAbstractListModel {
 
-     Q_OBJECT
+    Q_OBJECT
 
 public:
 
@@ -50,21 +50,29 @@ private:
     AudioBook* m_audiobook;
 };
 
+QString int2str(int i);
+
 class BackEnd : public QObject
 {
     Q_OBJECT
 
     Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
-    Q_PROPERTY(qreal fileProgress READ fileProgress NOTIFY fileProgressChanged)
+    Q_PROPERTY(qreal fileProgress READ fileProgress WRITE setFileProgress NOTIFY fileProgressChanged)
+    Q_PROPERTY(qreal bookProgress READ bookProgress NOTIFY fileProgressChanged)
 
     Q_PROPERTY(QString rootPath READ rootPath WRITE setRootPath NOTIFY rootPathChanged)
     Q_PROPERTY(QString rootPathUrl READ rootPathUrl WRITE setRootPathUrl NOTIFY rootPathChanged)
 
-    Q_PROPERTY(int playlistIndex READ playlistIndex WRITE setPlaylistIndex NOTIFY playListIndexChanged)
     Q_PROPERTY(AudioBookFileList* playlist READ playlist NOTIFY playlistChanged)
+    Q_PROPERTY(int playlistIndex READ playlistIndex WRITE setPlaylistIndex NOTIFY playListIndexChanged)
 
     Q_PROPERTY(AudioBookList* audioBookList READ audioBookList NOTIFY audioBookListChanged)
+    Q_PROPERTY(int audioBookListIndex READ audioBookListIndex WRITE setAudioBookListIndex NOTIFY audioBookListIndexChanged)
+
     Q_PROPERTY(QString tempo READ tempo NOTIFY tempoChanged)
+    Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
+
+    Q_PROPERTY(QString currentTime READ currentTime NOTIFY fileProgressChanged)
 
 public:
     explicit BackEnd(QObject *parent = nullptr);
@@ -102,17 +110,15 @@ public:
     }
 
     bool isPlaying() {
-        //return m_player.state() == QMediaPlayer::PlayingState;
         return m_player.state() == QMediaPlayer::PlayingState;
     }
 
-    qreal fileProgress() {
-        if(m_player.duration() != 0) {
-            qreal r;
-            r = (qreal)m_player.position() / m_player.duration();
-            return r;
-        } else {
-            return 0;
+    qreal fileProgress();
+    void setFileProgress(qreal value);
+
+    qreal bookProgress() {
+        if(m_audiobook != nullptr) {
+            return m_audiobook->progress();
         }
     }
 
@@ -120,21 +126,9 @@ public:
         return m_rootPath;
     }
 
-    void setRootPath(QString value) {
-        m_rootPath = value;
-        m_audioBookList = new AudioBookList(value);
-        m_settings.setValue("rootPath", value);
-        emit rootPathChanged();
-        emit audioBookListChanged();
-    }
+    void setRootPath(QString value);
 
-    QString rootPathUrl() {
-        QUrl u;
-        QDir d(m_rootPath);
-        u = u.fromLocalFile(d.absolutePath());
-        QString s = u.toString();
-        return s;
-    }
+    QString rootPathUrl();
 
     void setRootPathUrl(QString url) {
         QUrl u = QUrl(url);
@@ -170,11 +164,30 @@ public:
         return m_audioBookList;
     }
 
+    int audioBookListIndex() {
+        return m_audioBookList->getIndex();
+    }
+
+    void setAudioBookListIndex(int value);
+
     QString tempo() {
         qreal value = m_tempoValues.at(m_tempo);
         return QString::number(value, 'f', 2);
     }
 
+    QString currentTime();
+    
+    QString formatTime(int msec);
+
+    qreal volume() {
+        return m_volume;
+    }
+
+    void setVolume(qreal value) {
+        m_volume = value;
+        emit volumeChanged();
+    }
+    
 signals:
 
     void currentFolderChanged();
@@ -187,6 +200,8 @@ signals:
     void playlistChanged();
     void playlistItemChanged();
     void tempoChanged();
+    void audioBookListIndexChanged();
+    void volumeChanged();
 
 public slots:
 
@@ -235,5 +250,6 @@ private:
     AudioBookList* m_audioBookList;
     int m_tempo;
     QVector<qreal> m_tempoValues;
+    qreal m_volume;
 
 };

@@ -16,6 +16,9 @@ class AudioBook : public QObject
     Q_OBJECT
 
 public:
+
+    static AudioBook* createAudiobok(QString path, QObject* parent = nullptr);
+
     AudioBook(QString path, QObject* parent = nullptr);
     
     void openBook();
@@ -66,6 +69,10 @@ public:
 
     qreal progress();
 
+    int progressInt();
+
+    int totaltime();
+
     void readFileSizes();
 
     int size() {
@@ -83,6 +90,8 @@ private:
     QVector<AudioBookFile*> m_data;
     AudioBookFile *findFile(QString fileName);
     QString getFilePath(int i);
+    qint64 m_progress;
+    qint64 m_totaltime;
 };
 
 

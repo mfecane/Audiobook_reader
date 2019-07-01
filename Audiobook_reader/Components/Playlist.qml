@@ -19,13 +19,14 @@ Rectangle {
         Component {
             id: contactsDelegate
             Rectangle {
-                height: 48
+                height: 58
                 width: parent.width
                 color:"transparent"
                 Button {
                     anchors.topMargin: 10
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
+                    anchors.leftMargin: 15
+                    anchors.rightMargin: 15
+                    anchors.bottomMargin: 10
                     anchors.fill:parent
                     id: wrapper
 

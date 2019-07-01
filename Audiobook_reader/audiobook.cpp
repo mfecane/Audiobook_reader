@@ -7,15 +7,29 @@
 #include "globaljson.h"
 #include "backend.h"
 
+//TODO: AUDIOBOOK CONSTRUCTOR OBJECT
+
+AudioBook *AudioBook::createAudiobok(QString path, QObject* parent) {
+    QDir d(path);
+    if(d.exists()) {
+        d.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+        d.setSorting(QDir::Name);
+        QStringList filters;
+        filters << "*.mp3";
+        QFileInfoList list = d.entryInfoList();
+        if(list.size() > 0) {
+            return new AudioBook(path, parent);
+        }
+    }
+    return nullptr;
+}
 
 AudioBook::AudioBook(QString path, QObject *parent) : QObject (parent),
     m_index(0)
 {
     QAudioDeviceInfo device = QAudioDeviceInfo::defaultOutputDevice();
     QAudioFormat format = device.preferredFormat();
-
     m_path = path;
-
     QDir d(path);
     d.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     d.setSorting(QDir::Name);
@@ -37,10 +51,11 @@ void AudioBook::readFileSizes() {
     for(int i = 0; i < m_data.size(); ++i) {
         QString path = getFilePath(i);
         AudioBookFile *abf = m_data.at(i);
-        QMediaPlayer *player = new QMediaPlayer(this);
+        QMediaPlayer *player = new QMediaPlayer(abf);
         player->setMedia(QUrl::fromLocalFile(path));
         abf->setPlayer(player);
-        connect(player, SIGNAL(metaDataAvailableChanged(bool)), abf, SLOT(metaDataChanged(bool)));
+        connect(player, SIGNAL(metaDataAvailableChanged(bool)),
+                abf, SLOT(metaDataChanged(bool)));
     }
 }
 
@@ -88,15 +103,16 @@ void AudioBook::writeJson() {
 }
 
 bool AudioBook::setCurrentFileIdex(int i) {
+    qDebug() << "setting current file index" << i;
     if(m_index == i) {
         return false;
     }
-    qDebug() << "set current file index" << i;
     if(i >=0 && i < m_data.size()) {
         m_index = i;
         return true;
     }
     else return false;
+    //update backend?
 }
 
 bool AudioBook::setCurrentFileName(QString filename) {
@@ -157,15 +173,28 @@ bool AudioBook::setPrevious() {
 }
 
 qreal AudioBook::progress() {
-    qint64 totalsize = 0;
-    qint64 totalpos = 0;
+    m_progress = 0;
+    m_totaltime = 0;
     for(int i = 0; i < m_data.size(); ++i) {
-        totalsize += m_data.at(i)->size();
+        m_totaltime += m_data.at(i)->size();
         if(i < m_index) {
-            totalpos += m_data.at(i)->size();
+            m_progress += m_data.at(i)->size();
+        } else if (i == m_index) {
+            m_progress += m_data.at(i)->pos();
         }
     }
-    return (qreal)totalpos / totalsize;
+    if(m_totaltime > 0) {
+        return (qreal)m_progress / m_totaltime;
+    }
+    return 0;
+}
+
+int AudioBook::progressInt() {
+    return m_progress;
+}
+
+int AudioBook::totaltime() {
+    return m_totaltime;
 }
 
 void AudioBook::setFileTime(QString fileName, qint64 pos, bool overwrite) {

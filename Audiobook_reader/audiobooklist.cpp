@@ -10,7 +10,11 @@ AudioBookList::AudioBookList(QString root) :
         list = d.entryInfoList();
         for(int i = 0; i < list.size(); ++i) {
             qDebug() << "adding audiobook folder" << list.at(i).absoluteFilePath() ;
-            m_list.append(new AudioBook(list.at(i).absoluteFilePath(), this));
+            AudioBook* ab = AudioBook::createAudiobok(list.at(i).absoluteFilePath(), this);
+            if(ab != nullptr) {
+                qDebug() << "valid audiobook found";
+                m_list.append(ab);
+            }
         }
     }
 }
@@ -18,6 +22,7 @@ AudioBookList::AudioBookList(QString root) :
 QHash<int, QByteArray> AudioBookList::roleNames() const {
     QHash<int, QByteArray> roles;
     roles[TextRole] = "text";
+    roles[ProgressRole] = "progress";
     return roles;
 }
 
@@ -33,6 +38,17 @@ QVariant AudioBookList::data(const QModelIndex &index, int role) const {
         return m_list[index.row()]->progress();
     }
     return false;
+}
+
+void AudioBookList::audioBookListItemChanged() {
+    //    QModelIndex topLeft = createIndex(m_audiobook->index(), 0);
+    //    QModelIndex bottomRight = createIndex(m_audiobook->index(), 0);
+    QModelIndex topLeft = createIndex(0, 0);
+    QModelIndex bottomRight = createIndex(m_list.size(), 0);
+    QVector<int> roleVector;
+    roleVector << AudiobookRoles::ProgressRole;
+    emit dataChanged(topLeft, bottomRight, roleVector);
+    // this would not work
 }
 
 //void QAbstractItemModel::dataChanged(

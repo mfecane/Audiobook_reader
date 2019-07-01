@@ -5,7 +5,7 @@
 #include "audiobook.h"
 
 class AudioBookList : public QAbstractListModel {
-     Q_OBJECT
+    Q_OBJECT
 
 public:
 
@@ -30,14 +30,26 @@ public:
         return m_list.at(i);
     }
 
-//public slots:
+    void setIndex(int value) {
+        m_index = value;
+    }
+    int getIndex() {
+        return m_index;
+    }
 
-//    void playlistItemChanged();
+    //public slots:
+
+    //    void playlistItemChanged();
+
+public slots:
+
+    void audioBookListItemChanged();
 
 private:
 
     QString m_root;
     QFileInfoList list;
     QVector<AudioBook*> m_list;
+    int m_index;
 
 };

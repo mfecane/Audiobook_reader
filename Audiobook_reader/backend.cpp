@@ -46,9 +46,6 @@ BackEnd::BackEnd(QObject *parent) :
     QObject::connect (&m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
                       this, SLOT(isPlayingSlot(QMediaPlayer::State)));
 
-    QObject::connect (&m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
-                      this, SLOT(isPlayingSlot(QMediaPlayer::State)));
-
     QObject::connect (&m_player, SIGNAL(positionChanged(int)),
                       this, SLOT(positionChangedSlot(int)));
 
@@ -60,15 +57,58 @@ BackEnd::BackEnd(QObject *parent) :
     QObject::connect (&m_player, SIGNAL(onFinished()),
                       this, SLOT(onFinishedSlot()));
 
-    setRootPath(m_settings.value("rootPath").toString());
 
     GlobalJSON::getInstance()->loadJSON();
     autoLoad();
 
+    setRootPath(m_settings.value("rootPath").toString());
+    int tempo = m_settings.value("tempo").toInt();
+    if(tempo > 0) {
+        m_tempo = tempo;
+    }
+
     setupAutosave();
 }
 
+qreal BackEnd::fileProgress() {
+    if(m_player.duration() != 0) {
+        qreal r;
+        r = (qreal)m_player.position() / m_player.duration();
+        return r;
+    } else {
+        return 0;
+    }
+}
+
+void BackEnd::setFileProgress(qreal value) {
+    if(m_player.duration() != 0) {
+        int newpos = m_player.duration() * value;
+        m_player.setPosition(newpos);
+    }
+}
+
+void BackEnd::setRootPath(QString value) {
+    m_rootPath = value;
+    m_audioBookList = new AudioBookList(value);
+
+    connect(this,SIGNAL(playlistItemChanged()),
+            m_audioBookList,SLOT(audioBookListItemChanged()));
+
+    m_settings.setValue("rootPath", value);
+    emit rootPathChanged();
+    emit audioBookListChanged();
+}
+
+QString BackEnd::rootPathUrl() {
+    QUrl u;
+    QDir d(m_rootPath);
+    u = u.fromLocalFile(d.absolutePath());
+    QString s = u.toString();
+    return s;
+}
+
 void BackEnd::setCurrentAudiobookIndex(int i) { // for loading audiobook from list
+    qDebug() << "setting audiobook index" << i;
     QString path = m_audioBookList->at(i)->getPath();
     openAudioBook(path);
 }
@@ -78,6 +118,7 @@ void BackEnd::increaseTempo() {
     if(index >= m_tempoValues.size()) return;
     m_tempo = index;
     m_player.setTempo(m_tempoValues.at(m_tempo));
+    m_settings.setValue("tempo", m_tempo);
     emit tempoChanged();
 }
 
@@ -86,6 +127,7 @@ void BackEnd::decreaseTempo() {
     if(index < 0) return;
     m_tempo = index;
     m_player.setTempo(m_tempoValues.at(m_tempo));
+    m_settings.setValue("tempo", m_tempo);
     emit tempoChanged();
 }
 
@@ -104,7 +146,6 @@ void BackEnd::openAudioBook(QString path) {
         m_audiobook->readFileSizes();
         m_playlist = new AudioBookFileList(m_audiobook);
 
-
         QObject::connect (this, SIGNAL(playlistItemChanged()),
                           m_playlist, SLOT(playlistItemChanged()));
         QObject::connect (this, SIGNAL(playlistChanged()),
@@ -115,6 +156,34 @@ void BackEnd::openAudioBook(QString path) {
         emit playlistChanged();
         emit playListIndexChanged();
     }
+}
+
+void BackEnd::setAudioBookListIndex(int value) {
+    m_audioBookList->setIndex(value);
+    QString path = m_audioBookList->at(value)->getPath();
+    openAudioBook(path);
+    emit audioBookListIndexChanged();
+}
+
+QString BackEnd::currentTime() {
+    if(m_audiobook != nullptr) {
+        QString s1 = formatTime(m_audiobook->progressInt());
+        QString s2 = formatTime(m_audiobook->totaltime());
+        return s1 + " / " + s2;
+    }
+    return QStringLiteral("..:..:.. / ..:..:..");
+}
+
+QString BackEnd::formatTime(int msec) {
+    qint64 t;
+    int sec, min, hour;
+    t = msec;
+    sec = floor(t / 1000);
+    min = floor(sec / 60);
+    sec = sec % 60;
+    hour = floor(min / 60);
+    min = min % 60;
+    return QString("%1:%2:%3").arg(int2str(hour)).arg(int2str(min)).arg(int2str(sec));
 }
 
 void BackEnd::closeAudioBook() {
@@ -130,7 +199,7 @@ void BackEnd::closeAudioBook() {
 }
 
 void BackEnd::updatePlayer() { // updates player with appropriate file
-    if(m_audiobook != nullptr) {
+    if(m_audiobook != nullptr && m_audiobook->size() > 0) {
         QString path = m_audiobook->getCurrentFilePath();
         if(QFile(path).exists()) {
             if(isPlaying()) m_player.stop();
@@ -144,6 +213,17 @@ void BackEnd::updatePlayer() { // updates player with appropriate file
             qDebug() << "set file " << path;
             qDebug() << "pos" << pos;
         }
+    }
+}
+
+QString int2str(int i) {
+    QString s;
+    s = QString::number(i);
+    if(s.length() != 2) {
+        s = QString("0") + s.right(1);
+        return s;
+    } else {
+        return s;
     }
 }
 
@@ -222,7 +302,7 @@ void BackEnd::isPlayingSlot(QMediaPlayer::State state) {
 }
 
 void BackEnd::autoSave() {
-    if(m_audiobook != nullptr) {
+    if(m_audiobook != nullptr && m_audiobook->size() > 0) {
         m_audiobook->setCurrentPos(m_player.position());
         m_audiobook->writeJson();
     }
@@ -242,25 +322,29 @@ void BackEnd::onFinishedSlot() {
     m_audiobook->setNext();
     updatePlayer();
     play();
+    emit isPlayingChanged();
+    emit playListIndexChanged();
 }
 
 void BackEnd::readCurrentJson(QString &savedFolder, QString &savedFile) {
     QJsonObject jsonRoot;
     jsonRoot = GlobalJSON::getInstance()->getRoot();
-    if(jsonRoot.contains("currentBook") && jsonRoot["currentBook"].isDouble()) {
+    if(jsonRoot.contains("currentBook") && jsonRoot["currentBook"].isString()) {
         savedFolder = jsonRoot["currentBook"].toString();
     }
-    if(jsonRoot.contains("currentFile") && jsonRoot["currentFile"].isDouble()) {
+    if(jsonRoot.contains("currentFile") && jsonRoot["currentFile"].isString()) {
         savedFile = jsonRoot["currentFile"].toString();
     }
 }
 
 void BackEnd::writeCurrentJson() {
-    muxJson.lock();
-    QJsonObject& jsonRoot = GlobalJSON::getInstance()->getRoot();
-    jsonRoot["currentBook"] = m_audiobook->getPath();
-    jsonRoot["currentFile"] = m_audiobook->getCurrentFile()->fileName();
-    muxJson.unlock();
+    if(m_audiobook != nullptr && m_audiobook->size() > 0){
+        muxJson.lock();
+        QJsonObject& jsonRoot = GlobalJSON::getInstance()->getRoot();
+        jsonRoot["currentBook"] = m_audiobook->getPath();
+        jsonRoot["currentFile"] = m_audiobook->getCurrentFile()->fileName();
+        muxJson.unlock();
+    }
 }
 
 /////////// Audio book list ////////////////////////////////////
