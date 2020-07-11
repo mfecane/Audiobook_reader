@@ -1,7 +1,9 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 
 #include "backend.h"
+#include "booklistmodel.h"
 
 int main(int argc, char *argv[])
 {
@@ -12,11 +14,20 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QGuiApplication app(argc, argv);
+
+    BookList bookList("C:/Audiobook");
+
+    qmlRegisterType<BookListModel>("io.qt.examples.booklistmodel",
+                                       1, 0, "BookListModel");
+    qmlRegisterSingletonType<BackEnd>("io.qt.examples.backend",
+                                      1, 0, "BackEnd", &BackEnd::qmlInstance);
+
     QQmlApplicationEngine engine;
 
     engine.addImportPath(":/imports");
 
-    qmlRegisterSingletonType<BackEnd>("io.qt.examples.backend", 1, 0, "BackEnd", &BackEnd::qmlInstance);
+    engine.rootContext()->setContextProperty(QStringLiteral("bookList"),
+                                             &bookList);
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

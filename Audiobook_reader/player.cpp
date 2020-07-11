@@ -78,10 +78,10 @@ void Player::stop() {
         m_audio->stop();
         m_audio->reset();
         m_decoder->stop();
+        m_data.clear();
         m_smallbuffer.clear();
         m_outBuffer.close();
         m_inBuffer.close();
-        m_data.clear();
         m_bytepos = 0;
         m_afterDecodingPos = 0;
         clearSoundtouch();

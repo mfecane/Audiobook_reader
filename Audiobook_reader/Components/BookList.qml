@@ -4,12 +4,19 @@ import QtQuick.Controls 2.12
 import Qt.labs.folderlistmodel 2.12
 
 import io.qt.examples.backend 1.0
+import io.qt.examples.booklistmodel 1.0
+
 import Theme 1.0
 
 GridView {
     id: booksView
     width: parent.width
-    model:BackEnd.audioBookList
+    //model:BackEnd.audioBookList
+
+    model: BookListModel {
+        list: bookList
+    }
+
     currentIndex: BackEnd.audioBookListIndex
     cellWidth: width/2
     cellHeight: 100

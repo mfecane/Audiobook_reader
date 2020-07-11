@@ -22,6 +22,10 @@ SOURCES += \
         audiobookfile.cpp \
         audiobooklist.cpp \
         backend.cpp \
+        book.cpp \
+        bookfile.cpp \
+        booklist.cpp \
+        booklistmodel.cpp \
         globaljson.cpp \
         main.cpp \
         player.cpp
@@ -45,6 +49,10 @@ HEADERS += \
     audiobookfile.h \
     audiobooklist.h \
     backend.h \
+    book.h \
+    bookfile.h \
+    booklist.h \
+    booklistmodel.h \
     globaljson.h \
     player.h
 
