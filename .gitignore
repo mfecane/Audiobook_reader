@@ -25,3 +25,6 @@ build_app/
 *.pro.user
 
 *.rar
+
+build*
+*.txt.user
