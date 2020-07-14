@@ -4,37 +4,44 @@ import QtQuick.Controls 2.12
 
 import Qt.labs.folderlistmodel 2.12
 import io.qt.examples.backend 1.0
+import io.qt.examples.audiobookmodel 1.0
 import Theme 1.0
 
 Rectangle {
     color: Theme.background_dark
+
     ListView {
         id: playlistView
         anchors.fill: parent
-        clip: true
-        model: BackEnd.playlist
-        currentIndex: BackEnd.playlistIndex // TODO: fix this
         spacing: 0
+        clip: true
+
+        model: AudioBookModel {
+           id: audioBookModel
+           audioBook: BackEnd.audioBook
+        }
+
+        currentIndex: audioBookModel.index
 
         Component {
-            id: contactsDelegate
-            Rectangle {
+            id: playlistDelegate
+            Item {
+                id: wrapper
                 height: 58
-                width: parent.width
-                color:"transparent"
+                width: playlistView.width
+                property real progress: model.progress;
+
                 Button {
                     anchors.topMargin: 10
                     anchors.leftMargin: 15
                     anchors.rightMargin: 15
                     anchors.bottomMargin: 10
-                    anchors.fill:parent
-                    id: wrapper
-
-                    property real progress: model.progress;
+                    anchors.fill: parent
 
                     state: (wrapper.down | wrapper.ListView.isCurrentItem) ?
                                "pressed" : wrapper.hovered ?
                                    "hover" : "default"
+
                     contentItem: Label {
                         leftPadding: 10
                         text: model.text
@@ -51,8 +58,8 @@ Rectangle {
                             width: backgroundRect.width * progress
                             anchors.left: parent.left
                             anchors.bottom: parent.bottom
-                        }
-                    }
+                            }
+                        } // Rectangle:backgroundRect
                     states: [
                         State {
                             name : "hover"
@@ -75,19 +82,19 @@ Rectangle {
                                 color: Theme.background_color
                             }
                         }
-                    ]
+                    ] // states
                     transitions: Transition {
                         ColorAnimation {
                             duration: 50
                         }
                     }
-                    onClicked: playlistView.currentIndex = index
-                }
-            }
-        }
+                    onClicked:
+                        audioBookModel.index = index
+                } //Button
+            } //Rectangle
+        } //Component
 
-        delegate: contactsDelegate
+        delegate: playlistDelegate
         ScrollBar.vertical: ScrollBar { }
-        onCurrentItemChanged: BackEnd.playlistIndex = currentIndex
     }
 }

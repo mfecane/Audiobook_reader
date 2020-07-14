@@ -8,16 +8,15 @@
 
 #include "player.h"
 #include "audiobookfile.h"
+#include "audiobookinfo.h"
+#include "backend.h"
 
-class BackEnd;
-
-class AudioBook : public QObject
+class AudioBook : public AudioBookInfo
 {
+
     Q_OBJECT
 
 public:
-
-    static AudioBook* createAudiobok(QString path, QObject* parent = nullptr);
 
     AudioBook(QString path, QObject* parent = nullptr);
     
@@ -35,7 +34,11 @@ public:
         return m_index;
     }
 
-    bool setCurrentFileIdex(int i);
+    QString name() const {
+        return m_name;
+    }
+
+    bool setCurrentFileIndex(int i);
 
     bool setCurrentFileName(QString filename);
 
@@ -58,9 +61,8 @@ public:
     bool setNext();
     bool setPrevious();
 
-    QString getPath() const {
-        return m_path;
-    }
+    QString getPath() const;
+    QString path() const;
 
     QString folderName() const {
         QFileInfo fi(m_path);
@@ -81,14 +83,14 @@ public:
 
 private:
 
+    BackEnd *backEnd(); // BackEnd shortcut
     void setFileTime(QString fileName, qint64 pos, bool overwrite = true);
-
-    BackEnd *backEnd();
-
-    QString m_path;
-    int m_index;
-    QVector<AudioBookFile*> m_data;
     AudioBookFile *findFile(QString fileName);
+
+    QString m_name;
+    QString m_path;
+    QVector<AudioBookFile*> m_data;
+    int m_index = 0;
     QString getFilePath(int i);
     qint64 m_progress;
     qint64 m_totaltime;

@@ -9,22 +9,8 @@
 
 //TODO: AUDIOBOOK CONSTRUCTOR OBJECT
 
-AudioBook *AudioBook::createAudiobok(QString path, QObject* parent) {
-    QDir d(path);
-    if(d.exists()) {
-        d.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-        d.setSorting(QDir::Name);
-        QStringList filters;
-        filters << "*.mp3";
-        QFileInfoList list = d.entryInfoList();
-        if(list.size() > 0) {
-            return new AudioBook(path, parent);
-        }
-    }
-    return nullptr;
-}
-
-AudioBook::AudioBook(QString path, QObject *parent) : QObject (parent),
+AudioBook::AudioBook(QString path, QObject *parent) :
+    AudioBookInfo(path, parent),
     m_index(0)
 {
     QAudioDeviceInfo device = QAudioDeviceInfo::defaultOutputDevice();
@@ -102,7 +88,7 @@ void AudioBook::writeJson() {
     GlobalJSON::getInstance()->setBook(bookObject, m_path);
 }
 
-bool AudioBook::setCurrentFileIdex(int i) {
+bool AudioBook::setCurrentFileIndex(int i) {
     qDebug() << "setting current file index" << i;
     if(m_index == i) {
         return false;
@@ -118,7 +104,7 @@ bool AudioBook::setCurrentFileIdex(int i) {
 bool AudioBook::setCurrentFileName(QString filename) {
     for (int i = 0; i < m_data.size(); ++i) {
         if ( m_data.at(i)->fileName() == filename) {
-            setCurrentFileIdex(i);
+            setCurrentFileIndex(i);
             qDebug() << "set current file name" << filename;
             return true;
         }
@@ -170,6 +156,14 @@ bool AudioBook::setPrevious() {
     if(m_index <= 0) return false;
     --m_index;
     return true;
+}
+
+QString AudioBook::getPath() const {
+    return path();
+}
+
+QString AudioBook::path() const {
+    return m_path;
 }
 
 qreal AudioBook::progress() {

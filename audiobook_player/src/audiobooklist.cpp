@@ -1,65 +1,66 @@
 #include "audiobooklist.h"
+#include "audiobookinfo.h"
+#include "backend.h"
 
-AudioBookList::AudioBookList(QString root) :
+#include <QDir>
+#include <QFileInfoList>
+#include <QDebug>
+#include <stdexcept>
+
+AudioBookList::AudioBookList(QString root, QString current) :
     m_root(root)
 {
     QDir d(m_root);
     if(d.exists()) {
         d.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
         d.setSorting(QDir::Name);
-        list = d.entryInfoList();
+        QFileInfoList list = d.entryInfoList();
         for(int i = 0; i < list.size(); ++i) {
-            qDebug() << "adding audiobook folder" << list.at(i).absoluteFilePath() ;
-            AudioBook* ab = AudioBook::createAudiobok(list.at(i).absoluteFilePath(), this);
-            if(ab != nullptr) {
-                qDebug() << "valid audiobook found";
+            auto path = list.at(i).absoluteFilePath();
+            try
+            {
+                auto ab = new AudioBookInfo(path, nullptr);
+                if(current == path) m_index = i;
                 m_list.append(ab);
+            }
+            catch(std::exception &e)
+            {
+                continue;
             }
         }
     }
 }
 
-QHash<int, QByteArray> AudioBookList::roleNames() const {
-    QHash<int, QByteArray> roles;
-    roles[TextRole] = "text";
-    roles[ProgressRole] = "progress";
-    return roles;
+void AudioBookList::setRootFolder(QString value) {
+    m_root = value;
 }
 
-int AudioBookList::rowCount(const QModelIndex &parent) const {
+AudioBookInfo *AudioBookList::at(int i) {
+    return m_list.at(i);
+}
+
+void AudioBookList::setIndex(int value) {
+    m_index = value;
+    QString path = m_list.at(m_index)->path();
+    BackEnd::getInstance()->setAudioBook(path);
+}
+
+int AudioBookList::getIndex() {
+    return m_index;
+}
+
+int AudioBookList::size() {
     return m_list.size();
 }
 
-QVariant AudioBookList::data(const QModelIndex &index, int role) const {
-    switch(role) {
-    case TextRole:
-        return m_list[index.row()]->folderName();
-    case ProgressRole:
-        return m_list[index.row()]->progress();
+void AudioBookList::checkIndexOf(QString path) {
+    for(int i = 0; i < m_list.size(); ++i) {
+        if(m_list.at(i)->path() == path) {
+            qDebug() << "Audiobook found in list";
+            m_index = i;
+            emit modelChanged();
+            // TODO: Notify model
+        }
     }
-    return false;
 }
 
-void AudioBookList::audioBookListItemChanged() {
-    //    QModelIndex topLeft = createIndex(m_audiobook->index(), 0);
-    //    QModelIndex bottomRight = createIndex(m_audiobook->index(), 0);
-    QModelIndex topLeft = createIndex(0, 0);
-    QModelIndex bottomRight = createIndex(m_list.size(), 0);
-    QVector<int> roleVector;
-    roleVector << AudiobookRoles::ProgressRole;
-    emit dataChanged(topLeft, bottomRight, roleVector);
-    // this would not work
-}
-
-//void QAbstractItemModel::dataChanged(
-//  const QModelIndex &topLeft,
-//  const QModelIndex &bottomRight,
-//  const QVector<int> &roles = ...)
-
-//void AudioBookList::playlistItemChanged() {
-//    QModelIndex topLeft = createIndex(0, 0);
-//    QModelIndex bottomRight = createIndex(m_list.size()-1, 0);
-//    QVector<int> roleVector;
-//    roleVector << AudiobookRoles::ProgressRole;
-//    emit dataChanged(topLeft, bottomRight, roleVector);
-//}

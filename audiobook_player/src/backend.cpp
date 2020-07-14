@@ -1,47 +1,27 @@
-#include "QDebug"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMutex>
+#include <QQmlContext>
+#include <QDebug>
 
 #include "backend.h"
 #include "globaljson.h"
 #include "audiobook.h"
+#include "backend.h"
 
 BackEnd* BackEnd::m_instance = nullptr;
-
-void BackEnd::setupAutosave() {
-    m_autoSaveTimer = new QTimer(this);
-    connect(m_autoSaveTimer, SIGNAL(timeout()), this, SLOT(autoSave()));
-    m_autoSaveTimer->setInterval(5000);
-    m_autoSaveTimer->start();
-}
 
 BackEnd::BackEnd(QObject *parent) :
     QObject(parent),
     m_currentPos(0),
     m_player(this),
     m_settings("Gavitka software", "Audiobook reader"),
-    m_audiobook(nullptr),
-    m_playlist(nullptr)
+    m_audiobook(nullptr)
 {
-    m_tempoValues.append(0.5);
-    m_tempoValues.append(0.6);
-    m_tempoValues.append(0.7);
-    m_tempoValues.append(0.8);
-    m_tempoValues.append(0.9);
-    m_tempoValues.append(1.0);
-    m_tempoValues.append(1.1);
-    m_tempoValues.append(1.2);
-    m_tempoValues.append(1.3);
-    m_tempoValues.append(1.4);
-    m_tempoValues.append(1.5);
-    m_tempoValues.append(1.6);
-    m_tempoValues.append(1.7);
-    m_tempoValues.append(1.8);
-    m_tempoValues.append(1.9);
-    m_tempoValues.append(2.0);
-    m_tempo = 5;
+    for(float f = 0.5; f <= 2.0; f += 0.1) {
+        m_tempoValues.append(f);
+    }
 
     QObject::connect (&m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
                       this, SLOT(isPlayingSlot(QMediaPlayer::State)));
@@ -59,15 +39,44 @@ BackEnd::BackEnd(QObject *parent) :
 
 
     GlobalJSON::getInstance()->loadJSON();
-    autoLoad();
+//    autoLoad();
 
-    setRootPath(m_settings.value("rootPath").toString());
     int tempo = m_settings.value("tempo").toInt();
     if(tempo > 0) {
         m_tempo = tempo;
     }
+//    setupAutosave();
+}
 
-    setupAutosave();
+QObject *BackEnd::qmlInstance(QQmlEngine *engine, QJSEngine *scriptEngine) {
+    Q_UNUSED(engine);
+    Q_UNUSED(scriptEngine);
+    return (QObject*)getInstance();
+}
+
+BackEnd *BackEnd::getInstance() {
+    if(!m_instance) {
+        m_instance = new BackEnd();
+    }
+    return m_instance;
+}
+
+QUrl BackEnd::getFileUrl() {
+    QDir d;
+    QUrl u = QUrl::fromLocalFile(m_currentFolder + d.separator() + m_currentFileName);
+    qDebug() << "getFileUrl" << u ;
+    return u;
+}
+
+bool BackEnd::isPlaying() {
+    return m_player.state() == QMediaPlayer::PlayingState;
+}
+
+void BackEnd::setupAutosave() {
+    m_autoSaveTimer = new QTimer(this);
+    connect(m_autoSaveTimer, SIGNAL(timeout()), this, SLOT(autoSave()));
+    m_autoSaveTimer->setInterval(5000);
+    m_autoSaveTimer->start();
 }
 
 qreal BackEnd::fileProgress() {
@@ -87,16 +96,23 @@ void BackEnd::setFileProgress(qreal value) {
     }
 }
 
+qreal BackEnd::bookProgress() {
+    if(m_audiobook != nullptr) {
+        return m_audiobook->progress();
+    } else {
+        return 0;
+    }
+}
+
+QString BackEnd::rootPath() {
+    return m_rootPath;
+}
+
 void BackEnd::setRootPath(QString value) {
     m_rootPath = value;
     m_audioBookList = new AudioBookList(value);
-
-    connect(this,SIGNAL(playlistItemChanged()),
-            m_audioBookList,SLOT(audioBookListItemChanged()));
-
     m_settings.setValue("rootPath", value);
     emit rootPathChanged();
-    emit audioBookListChanged();
 }
 
 QString BackEnd::rootPathUrl() {
@@ -107,10 +123,18 @@ QString BackEnd::rootPathUrl() {
     return s;
 }
 
-void BackEnd::setCurrentAudiobookIndex(int i) { // for loading audiobook from list
-    qDebug() << "setting audiobook index" << i;
-    QString path = m_audioBookList->at(i)->getPath();
-    openAudioBook(path);
+void BackEnd::setRootPathUrl(QString url) {
+    QUrl u = QUrl(url);
+    setRootPath(u.toLocalFile());
+}
+
+QList<QObject *> BackEnd::bookFileList() {
+    return m_bookFileList;
+}
+
+int BackEnd::playlistIndex() {
+    if(m_audiobook == nullptr) return 0;
+    return m_audiobook->index();
 }
 
 void BackEnd::increaseTempo() {
@@ -131,38 +155,38 @@ void BackEnd::decreaseTempo() {
     emit tempoChanged();
 }
 
-void BackEnd::openAudioBook(QString path) {
+void BackEnd::setAudioBook(QString path) {
+    // TODO: Unify path check
     QDir d(path);
     if(d.exists() && !path.isEmpty()) {
-        QString path = d.absolutePath();
         if(m_audiobook != nullptr) {
-            if(m_audiobook->getPath() == path) {
+            if(m_audiobook->path() == path) {
                 return;
             } else {
                 closeAudioBook();
             }
         }
-        m_audiobook = new AudioBook(path);
-        m_audiobook->readFileSizes();
-        m_playlist = new AudioBookFileList(m_audiobook);
+        try {
+            m_audiobook = new AudioBook(path);
+            m_audioBookList->checkIndexOf(path);
+            emit audioBookChanged();
 
-        QObject::connect (this, SIGNAL(playlistItemChanged()),
-                          m_playlist, SLOT(playlistItemChanged()));
-        QObject::connect (this, SIGNAL(playlistChanged()),
-                          m_playlist, SLOT(playlistChanged()));
-
-        updatePlayer();
-        emit currentFolderChanged();
-        emit playlistChanged();
-        emit playListIndexChanged();
+            //updatePlayer();
+        }
+        catch(std::exception* e) {
+            qDebug() << e->what();
+            return;
+        }
     }
 }
 
-void BackEnd::setAudioBookListIndex(int value) {
-    m_audioBookList->setIndex(value);
-    QString path = m_audioBookList->at(value)->getPath();
-    openAudioBook(path);
-    emit audioBookListIndexChanged();
+AudioBookList *BackEnd::audioBookList() {
+    return m_audioBookList;
+}
+
+QString BackEnd::tempo() {
+    qreal value = m_tempoValues.at(m_tempo);
+    return QString::number(value, 'f', 2);
 }
 
 QString BackEnd::currentTime() {
@@ -186,14 +210,32 @@ QString BackEnd::formatTime(int msec) {
     return QString("%1:%2:%3").arg(int2str(hour)).arg(int2str(min)).arg(int2str(sec));
 }
 
+qreal BackEnd::volume() {
+    return m_volume;
+}
+
+void BackEnd::setVolume(qreal value) {
+    m_volume = value;
+    emit volumeChanged();
+}
+
+void BackEnd::setEngine(QQmlApplicationEngine *engine)
+{
+    m_engine = engine;
+}
+
+void BackEnd::initAudioBooks()
+{
+    // engine should exist
+    setRootPath(m_settings.value("rootPath").toString());
+    setAudioBook("C:/Audiobook/Abercrombie_Joe_-_Geroi_(Golovin_K)");
+}
+
 void BackEnd::closeAudioBook() {
     if(isPlaying()) m_player.stop();
 
     delete m_audiobook;
     m_audiobook = nullptr;
-
-    delete m_playlist;
-    m_playlist = nullptr;
 
     emit isPlayingChanged();
 }
@@ -228,7 +270,7 @@ QString int2str(int i) {
 }
 
 void BackEnd::setPlaylistIndex(int value) {
-    if(m_audiobook->setCurrentFileIdex(value)) {
+    if(m_audiobook->setCurrentFileIndex(value)) {
         updatePlayer();
         emit playListIndexChanged();
         emit playlistChanged();
@@ -241,6 +283,10 @@ void BackEnd::setPlaylistFile(QString value) {
         emit playListIndexChanged();
         emit playlistChanged();
     }
+}
+
+AudioBook *BackEnd::audioBook() {
+    return m_audiobook;
 }
 
 void BackEnd::closeBookFolder() {
@@ -314,7 +360,7 @@ void BackEnd::autoLoad() {
     QString savedFolder;
     QString savedFile;
     readCurrentJson(savedFolder, savedFile);
-    openAudioBook(savedFolder);
+    setAudioBook(savedFolder);
     setPlaylistFile(savedFile);
 }
 
@@ -345,50 +391,4 @@ void BackEnd::writeCurrentJson() {
         jsonRoot["currentFile"] = m_audiobook->getCurrentFile()->fileName();
         muxJson.unlock();
     }
-}
-
-/////////// Audio book list ////////////////////////////////////
-
-AudioBookFileList::AudioBookFileList(AudioBook *audiobook) :
-    m_audiobook(audiobook)
-{ }
-
-QHash<int, QByteArray> AudioBookFileList::roleNames() const {
-    QHash<int, QByteArray> roles;
-    roles[TextRole] = "text";
-    roles[progressRole] = "progress";
-    return roles;
-}
-
-int AudioBookFileList::rowCount(const QModelIndex &parent) const {
-    if(m_audiobook == nullptr) return 0;
-    return m_audiobook->fileCount();
-}
-
-QVariant AudioBookFileList::data(const QModelIndex &index, int role) const {
-    if(m_audiobook == nullptr) return "";
-    switch(role) {
-    case TextRole:
-        return m_audiobook->fileAt(index.row())->fileName();
-    case progressRole:
-        return m_audiobook->progressOf(index.row());
-    }
-    return false;
-}
-
-void AudioBookFileList::playlistItemChanged() {
-    QModelIndex topLeft = createIndex(m_audiobook->index(), 0);
-    QModelIndex bottomRight = createIndex(m_audiobook->index(), 0);
-    QVector<int> roleVector;
-    roleVector << BookFileRoles::progressRole;
-    emit dataChanged(topLeft, bottomRight, roleVector);
-}
-
-
-void AudioBookFileList::playlistChanged() {
-    QModelIndex topLeft = createIndex(0, 0);
-    QModelIndex bottomRight = createIndex(m_audiobook->size()-1, 0);
-    QVector<int> roleVector;
-    roleVector << BookFileRoles::progressRole;
-    emit dataChanged(topLeft, bottomRight, roleVector);
 }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <QAudioDecoder>
 #include <QMediaPlayer>
 #include <QObject>
@@ -37,6 +38,10 @@ public:
 
     void setPlayer(QMediaPlayer* value) {
         m_player = value;
+    }
+
+    qreal progress() const {
+        return (size() > 0) ? (qreal)pos() / size() : 0;
     }
 
 public slots:

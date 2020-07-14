@@ -38,8 +38,7 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    color: "white"
-
+                    color: "slateblue"
                     BookList {
                         id:booksPage
                         anchors.fill: parent

@@ -2,54 +2,30 @@
 #include <QObject>
 #include <QAbstractListModel>
 
-#include "audiobook.h"
+#include "audiobookinfo.h"
 
-class AudioBookList : public QAbstractListModel {
+class AudioBookList : public QObject {
+
     Q_OBJECT
 
 public:
 
-    enum AudiobookRoles {
-        TextRole = Qt::UserRole +1,
-        ProgressRole
-    };
+    AudioBookList(QString root, QString currnet = "");
+    void setRootFolder(QString value);
+    AudioBookInfo* at(int i);
+    void setIndex(int value);
+    int getIndex();
+    int size();
+    void checkIndexOf(QString path);
 
-    AudioBookList(QString root);
+signals:
 
-    QHash<int, QByteArray> roleNames() const;
-
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
-
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-
-    void setRootFolder(QString value) {
-        m_root = value;
-    }
-
-    const AudioBook* at(int i) {
-        return m_list.at(i);
-    }
-
-    void setIndex(int value) {
-        m_index = value;
-    }
-    int getIndex() {
-        return m_index;
-    }
-
-    //public slots:
-
-    //    void playlistItemChanged();
-
-public slots:
-
-    void audioBookListItemChanged();
+    void modelChanged();
 
 private:
 
     QString m_root;
-    QFileInfoList list;
-    QVector<AudioBook*> m_list;
-    int m_index;
+    QVector<AudioBookInfo*> m_list;
+    int m_index = 0;
 
 };

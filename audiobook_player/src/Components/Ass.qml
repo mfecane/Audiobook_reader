@@ -8,9 +8,13 @@ Rectangle {
     Flickable {
         width: parent.width
         anchors.fill: parent
+        contentWidth: width;
         contentHeight: child.height + 40
         Rectangle {
             width: parent.width
+            color: "tan"
+            anchors.fill: parent
+
             ColumnLayout {
                 id: child
                 anchors.margins: 20
@@ -67,6 +71,9 @@ Rectangle {
     OpenFolderDialog {
         id: openFolderDialog
         folder: BackEnd.rootPathUrl
-        onAccepted: BackEnd.rootPathUrl = openFolderDialog.folder
+        onAccepted:
+        {
+            BackEnd.rootPathUrl = openFolderDialog.folder
+        }
     }
 }

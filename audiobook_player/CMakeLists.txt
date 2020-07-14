@@ -30,20 +30,22 @@ add_executable(${PROJECT_NAME} WIN32
 			src/main.cpp
 			src/backend.h
 			src/backend.cpp
+
 			src/audiobook.h
-			src/audiobook.cpp
-                        src/audiobooklist.h
-                        src/audiobooklist.cpp
+                        src/audiobook.cpp
+                        src/audiobookinfo.h
+                        src/audiobookinfo.cpp
                         src/audiobookfile.h
                         src/audiobookfile.cpp
-			src/book.h
-			src/book.cpp
-			src/bookfile.h
-			src/bookfile.cpp
-			src/booklist.h
-			src/booklist.cpp
-                        src/booklistmodel.h
-                        src/booklistmodel.cpp
+                        src/audiobookmodel.h
+                        src/audiobookmodel.cpp
+                        src/audiobooklist.h
+                        src/audiobooklist.cpp
+                        src/audiobooklistmodel.h
+                        src/audiobooklistmodel.cpp
+                        src/qpopka.h
+                        src/qpopka.cpp
+
                         src/globaljson.h
                         src/globaljson.cpp
                         src/player.h

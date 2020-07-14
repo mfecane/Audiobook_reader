@@ -10,43 +10,42 @@ import Theme 1.0
 
 GridView {
     id: booksView
-    width: parent.width
-    //model:BackEnd.audioBookList
+    //width: parent.width
+    anchors.fill: parent
+    cellWidth: width/2
+    cellHeight: 200
 
     model: BookListModel {
-        list: bookList
+        id: bookListModel
+        list: BackEnd.audioBookList
     }
 
-    currentIndex: BackEnd.audioBookListIndex
-    cellWidth: width/2
-    cellHeight: 100
-
-    anchors.fill: parent
+    currentIndex: bookListModel.index
 
     Component {
-        id:bookDelegate
-        Rectangle {
-            implicitHeight: 100
-            implicitWidth: booksView.width/2
+        id: bookDelegate
+        Item
+        {
+            id:wrapper
+            height: booksView.cellHeight
+            width: booksView.cellWidth
+            property real progress: model.progress
+
             Button {
-                anchors.margins: 10
                 anchors.fill: parent
-                id: wrapper
-
-                property real progress: model.progress
-
-                state: (wrapper.down | wrapper.ListView.isCurrentItem) ?
-                           "pressed" : wrapper.hovered ?
-                               "hover" : "default"
-                contentItem: Label {
-                    leftPadding: 10
-                    text: model.text
-                }
-
-                background:
-                    Rectangle {
-                    id:backgroundRect
+                anchors.margins: 10
+                state: (down | wrapper.GridView.isCurrentItem) ? "pressed" : hovered ? "hover" : "default"
+                contentItem:
+                    Label
+                    {
+                        leftPadding: 10
+                        text: model.text
+                    }
+                background: Rectangle
+                {
+                    id: backgroundRect
                     color: Theme.background_color
+                    //color: wrapper.ListView.isCurrentItem ? "red" : "black"
                     Rectangle {
                         height:4
                         color: Theme.button_color
@@ -54,45 +53,106 @@ GridView {
                         anchors.left: parent.left
                         anchors.bottom: parent.bottom
                     }
-                }
-                states: [
-                    State {
-                        name : "hover"
-                        PropertyChanges {
-                            target: backgroundRect
-                            color: Theme.main_gray
+                } // Rectangle:backgroundRect
+                onClicked: bookListModel.index = index
+                    states: [
+                        State {
+                            name : "hover"
+                            PropertyChanges {
+                                target: backgroundRect
+                                color: Theme.main_gray
+                            }
+                        },
+                        State {
+                            name : "pressed"
+                            PropertyChanges {
+                                target: backgroundRect
+                                color: Theme.main_gray
+                            }
+                        },
+                        State {
+                            name : "default"
+                            PropertyChanges {
+                                target: backgroundRect
+                                color: Theme.background_color
+                            }
                         }
-                    },
-                    State {
-                        name : "pressed"
-                        PropertyChanges {
-                            target: backgroundRect
-                            color: Theme.main_gray
-                        }
-                    },
-                    State {
-                        name : "default"
-                        PropertyChanges {
-                            target: backgroundRect
-                            color: Theme.background_color
-                        }
-                    }
-                ]
+                    ] // states
                 transitions: Transition {
                     ColorAnimation {
                         duration: 50
                     }
                 }
-                onClicked: booksView.currentIndex = index
-            }
-        }
-    }
+            } // Button
+        } //Item
+
+//        Rectangle {
+//            implicitHeight: 200
+//            implicitWidth: booksView.width/2
+//            Button {
+//                anchors.margins: 10
+//                anchors.fill: parent
+//                id: wrapper
+
+//                property real progress: model.progress
+
+//                state: (wrapper.down | wrapper.ListView.isCurrentItem) ?
+//                           "pressed" : wrapper.hovered ?
+//                               "hover" : "default"
+//                contentItem: Label {
+//                    leftPadding: 10
+//                    text: model.text
+//                }
+
+//                background:
+//                    Rectangle {
+//                    id:backgroundRect
+//                    color: Theme.background_color
+//                    Rectangle {
+//                        height:4
+//                        color: Theme.button_color
+//                        width: backgroundRect.width * wrapper.progress
+//                        anchors.left: parent.left
+//                        anchors.bottom: parent.bottom
+//                    }
+//                }
+//                states: [
+//                    State {
+//                        name : "hover"
+//                        PropertyChanges {
+//                            target: backgroundRect
+//                            color: Theme.main_gray
+//                        }
+//                    },
+//                    State {
+//                        name : "pressed"
+//                        PropertyChanges {
+//                            target: backgroundRect
+//                            color: Theme.main_gray
+//                        }
+//                    },
+//                    State {
+//                        name : "default"
+//                        PropertyChanges {
+//                            target: backgroundRect
+//                            color: Theme.background_color
+//                        }
+//                    }
+//                ] // states
+//                transitions: Transition {
+//                    ColorAnimation {
+//                        duration: 50
+//                    }
+//                }
+//                onClicked:
+//                {
+//                    booksView.currentIndex = index
+//                    bookListModel.index = index
+//                }
+//            } // Button
+//        } // Rectangle
+    } // Component
 
     delegate: bookDelegate
     ScrollBar.vertical: ScrollBar { }
-
-    onCurrentItemChanged: {
-        console.log("item changed");
-        BackEnd.audioBookListIndex = currentIndex;
-    }
-}
+} // GridView

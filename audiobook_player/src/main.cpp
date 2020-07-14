@@ -3,39 +3,48 @@
 #include <QQmlContext>
 
 #include "backend.h"
-#include "booklistmodel.h"
+#include "audiobookmodel.h"
+#include "audiobooklistmodel.h"
+#include "audiobook.h"
+#include <exception>
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
+
     QCoreApplication::setOrganizationName("Gavitka software");
     QCoreApplication::setOrganizationDomain("gavitka.com");
-    QCoreApplication::setApplicationName("Diversity recording");
+    QCoreApplication::setApplicationName("Diverse audiobook reader");
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QGuiApplication app(argc, argv);
 
-    BookList bookList("C:/Audiobook");
+    AudioBookList audioBookList("C:/Audiobook");
 
-    qmlRegisterType<BookListModel>("io.qt.examples.booklistmodel",
-                                       1, 0, "BookListModel");
-    qmlRegisterSingletonType<BackEnd>("io.qt.examples.backend",
-                                      1, 0, "BackEnd", &BackEnd::qmlInstance);
+    qmlRegisterType<AudioBookModel>("io.qt.examples.audiobookmodel", 1, 0, "AudioBookModel");
+    qmlRegisterType<AudioBookListModel>("io.qt.examples.booklistmodel", 1, 0, "BookListModel");
+    qmlRegisterSingletonType<BackEnd>("io.qt.examples.backend", 1, 0, "BackEnd", &BackEnd::qmlInstance);
 
     QQmlApplicationEngine engine;
 
     engine.addImportPath(":/imports");
 
-    engine.rootContext()->setContextProperty(QStringLiteral("bookList"),
-                                             &bookList);
+    BackEnd::getInstance()->setEngine(&engine);
+    BackEnd::getInstance()->initAudioBooks();
 
-    const QUrl url(QStringLiteral("qrc:/main.qml"));
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url](QObject *obj, const QUrl &objUrl) {
-        if (!obj && url == objUrl)
-            QCoreApplication::exit(-1);
-    }, Qt::QueuedConnection);
-    engine.load(url);
+    //engine.rootContext()->setContextProperty(QStringLiteral("bookList"), &audioBookList);
+
+//    try {
+//    AudioBook* audioBook = new AudioBook("C:/Audiobook/Abercrombie_Joe_-_Geroi_(Golovin_K)");
+//    engine.rootContext()->setContextProperty(QStringLiteral("audioBook2"), audioBook);
+//    }
+//    catch(std::exception &e){
+//        qDebug() << "this is not an audiobook, bro";
+//    }
+
+//    AudioBook* audioBook = new AudioBook("C:/Audiobook/Abercrombie_Joe_-_Geroi_(Golovin_K)");
+//    engine.rootContext()->setContextProperty(QStringLiteral("ctxAudioBook"), audioBook);
+
+    engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     return app.exec();
 }
