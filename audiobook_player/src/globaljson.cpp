@@ -28,7 +28,7 @@ QJsonObject GlobalJSON::getBook(QString path) {
     return bookObject;
 }
 
-void GlobalJSON::setBook(QJsonObject currentBookObject, QString folder) {
+void GlobalJSON::setBook(QJsonObject currentBookObject, QString path) {
     m_mux.lock();
     QJsonArray bookArray;
     bool success = false;
@@ -38,7 +38,7 @@ void GlobalJSON::setBook(QJsonObject currentBookObject, QString folder) {
             QJsonObject bookObject = bookArray[i].toObject();
             if(bookObject.contains("url") &&
                     bookObject["url"].isString() &&
-                    bookObject["url"].toString() == folder) {
+                    bookObject["url"].toString() == path) {
                 bookArray.replace(i, currentBookObject);
                 success = true;
             }

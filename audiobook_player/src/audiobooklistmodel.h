@@ -46,7 +46,7 @@ signals:
 
 public slots:
 
-    void modelChanged();
+    void indexChangedSlot(); // TODO: Rename
 
 private:
 

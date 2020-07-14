@@ -9,7 +9,7 @@ AudioBookListModel::AudioBookListModel()
 {
 }
 
-void AudioBookListModel::modelChanged()
+void AudioBookListModel::indexChangedSlot()
 {
     emit listChanged();
     emit indexChanged();
@@ -57,7 +57,7 @@ void AudioBookListModel::setList(AudioBookList *list)
     if(list == nullptr) return;
     beginResetModel();
     m_audiobooklist = list;
-    QObject::connect(m_audiobooklist, &AudioBookList::modelChanged, this, &AudioBookListModel::modelChanged);
+    QObject::connect(m_audiobooklist, &AudioBookList::indexChanged, this, &AudioBookListModel::indexChangedSlot);
     m_index = m_audiobooklist->getIndex();
     emit indexChanged();
     endResetModel();

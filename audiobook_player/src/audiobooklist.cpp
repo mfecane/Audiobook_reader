@@ -58,7 +58,7 @@ void AudioBookList::checkIndexOf(QString path) {
         if(m_list.at(i)->path() == path) {
             qDebug() << "Audiobook found in list";
             m_index = i;
-            emit modelChanged();
+            emit indexChanged();
             // TODO: Notify model
         }
     }

@@ -38,7 +38,7 @@ public:
         return m_name;
     }
 
-    bool setCurrentFileIndex(int i);
+    bool setIndex(int i);
 
     bool setCurrentFileName(QString filename);
 
@@ -80,6 +80,12 @@ public:
     int size() {
         return m_data.size();
     }
+
+    void requestRecalculateTime();
+
+signals:
+
+    void indexChanged();
 
 private:
 

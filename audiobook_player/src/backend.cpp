@@ -39,13 +39,12 @@ BackEnd::BackEnd(QObject *parent) :
 
 
     GlobalJSON::getInstance()->loadJSON();
-//    autoLoad();
 
     int tempo = m_settings.value("tempo").toInt();
     if(tempo > 0) {
         m_tempo = tempo;
     }
-//    setupAutosave();
+    setupAutosave();
 }
 
 QObject *BackEnd::qmlInstance(QQmlEngine *engine, QJSEngine *scriptEngine) {
@@ -228,7 +227,15 @@ void BackEnd::initAudioBooks()
 {
     // engine should exist
     setRootPath(m_settings.value("rootPath").toString());
-    setAudioBook("C:/Audiobook/Abercrombie_Joe_-_Geroi_(Golovin_K)");
+    autoLoad();
+}
+
+void BackEnd::autoLoad() {
+    QString savedFolder;
+    QString savedFile;
+    readCurrentJson(savedFolder, savedFile);
+    setAudioBook(savedFolder);
+    m_audiobook->setCurrentFileName(savedFile);
 }
 
 void BackEnd::closeAudioBook() {
@@ -266,22 +273,6 @@ QString int2str(int i) {
         return s;
     } else {
         return s;
-    }
-}
-
-void BackEnd::setPlaylistIndex(int value) {
-    if(m_audiobook->setCurrentFileIndex(value)) {
-        updatePlayer();
-        emit playListIndexChanged();
-        emit playlistChanged();
-    }
-}
-
-void BackEnd::setPlaylistFile(QString value) {
-    if(m_audiobook != nullptr && m_audiobook->setCurrentFileName(value)) {
-        updatePlayer();
-        emit playListIndexChanged();
-        emit playlistChanged();
     }
 }
 
@@ -354,14 +345,6 @@ void BackEnd::autoSave() {
     }
     writeCurrentJson();
     GlobalJSON::getInstance()->saveJSON();
-}
-
-void BackEnd::autoLoad() {
-    QString savedFolder;
-    QString savedFile;
-    readCurrentJson(savedFolder, savedFile);
-    setAudioBook(savedFolder);
-    setPlaylistFile(savedFile);
 }
 
 void BackEnd::onFinishedSlot() {

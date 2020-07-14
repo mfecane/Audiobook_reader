@@ -20,7 +20,7 @@ public:
 
 signals:
 
-    void modelChanged();
+    void indexChanged();
 
 private:
 

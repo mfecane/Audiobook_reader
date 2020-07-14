@@ -10,7 +10,7 @@ class AudioBookModel : public QAbstractListModel {
 Q_OBJECT
 
     Q_PROPERTY(int index READ index WRITE setIndex NOTIFY indexChanged)
-    Q_PROPERTY(AudioBook* audioBook READ audioBook WRITE setAudioBook NOTIFY audioBookChanged)
+    Q_PROPERTY(AudioBook* audioBook WRITE setAudioBook)
 
 public:
 
@@ -33,15 +33,17 @@ public:
     int index() const;
     void setIndex(int value);
 
+public slots:
+
+    void indexChangedSlot();
+
 signals:
 
     void listChanged();
     void indexChanged();
-    void audioBookChanged();
 
 private:
 
-    int m_index = 0;
     AudioBook* m_audiobook = nullptr;
 
 };

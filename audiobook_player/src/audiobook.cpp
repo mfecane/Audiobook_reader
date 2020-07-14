@@ -2,10 +2,12 @@
 #include <QHash>
 #include <QByteArray>
 #include <QMediaMetaData>
+#include <stdexcept>
 
 #include "audiobook.h"
 #include "globaljson.h"
 #include "backend.h"
+
 
 //TODO: AUDIOBOOK CONSTRUCTOR OBJECT
 
@@ -30,6 +32,7 @@ AudioBook::AudioBook(QString path, QObject *parent) :
         m_data.append(abf);
     }
     m_index = 0;
+    emit indexChanged();
     readJson();
 }
 
@@ -43,6 +46,10 @@ void AudioBook::readFileSizes() {
         connect(player, SIGNAL(metaDataAvailableChanged(bool)),
                 abf, SLOT(metaDataChanged(bool)));
     }
+}
+
+void AudioBook::requestRecalculateTime() {
+    throw new std::logic_error("Not implemented");
 }
 
 void AudioBook::readJson() {
@@ -68,6 +75,7 @@ void AudioBook::readJson() {
         }
     }
     if(bookObject.contains("current") && bookObject["current"].isString()) {
+        qDebug() << "XXB: JSON: Found current audiobook file in list of saved audiobooks!";
         setCurrentFileName(bookObject["current"].toString());
     }
 }
@@ -88,24 +96,23 @@ void AudioBook::writeJson() {
     GlobalJSON::getInstance()->setBook(bookObject, m_path);
 }
 
-bool AudioBook::setCurrentFileIndex(int i) {
-    qDebug() << "setting current file index" << i;
+bool AudioBook::setIndex(int i) {
     if(m_index == i) {
         return false;
     }
     if(i >=0 && i < m_data.size()) {
         m_index = i;
+        qDebug() << "XMK: fire index changed";
+        emit indexChanged();
         return true;
     }
     else return false;
-    //update backend?
 }
 
 bool AudioBook::setCurrentFileName(QString filename) {
     for (int i = 0; i < m_data.size(); ++i) {
         if ( m_data.at(i)->fileName() == filename) {
-            setCurrentFileIndex(i);
-            qDebug() << "set current file name" << filename;
+            setIndex(i);
             return true;
         }
     }

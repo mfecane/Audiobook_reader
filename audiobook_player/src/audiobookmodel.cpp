@@ -3,7 +3,6 @@
 
 AudioBookModel::AudioBookModel()
 {
-
 }
 
 QHash<int, QByteArray> AudioBookModel::roleNames() const
@@ -38,16 +37,12 @@ QVariant AudioBookModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-AudioBook *AudioBookModel::audioBook()
-{
-    return m_audiobook;
-}
-
 void AudioBookModel::setAudioBook(AudioBook *value) {
     beginResetModel();
     m_audiobook = value;
-    emit audioBookChanged();
     endResetModel();
+    emit indexChanged();
+    QObject::connect(m_audiobook, &AudioBook::indexChanged, this, &AudioBookModel::indexChangedSlot);
 }
 
 int AudioBookModel::index() const
@@ -55,8 +50,13 @@ int AudioBookModel::index() const
     return m_audiobook->index();
 }
 
+void AudioBookModel::indexChangedSlot()
+{
+    emit indexChanged();
+}
+
 void AudioBookModel::setIndex(int value)
 {
-    m_index = value;
+    m_audiobook->setIndex(value);
     emit indexChanged();
 }
