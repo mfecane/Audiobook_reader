@@ -50,7 +50,7 @@ int AudioBookModel::index() const
     return m_audiobook->index();
 }
 
-void AudioBookModel::indexChangedSlot(int i)
+void AudioBookModel::indexChangedSlot()
 {
     QModelIndex topLeft = QAbstractItemModel::createIndex(0, 0);;
     QModelIndex bottomRight = QAbstractItemModel::createIndex(m_audiobook->size()-1, 0);;
@@ -61,5 +61,6 @@ void AudioBookModel::indexChangedSlot(int i)
 void AudioBookModel::setIndex(int value)
 {
     m_audiobook->setIndex(value);
+    indexChangedSlot();
     emit indexChanged();
 }

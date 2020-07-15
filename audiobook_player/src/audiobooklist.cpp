@@ -43,6 +43,8 @@ void AudioBookList::setIndex(int value) {
     m_index = value;
     QString path = m_list.at(m_index)->path();
     BackEnd::getInstance()->setAudioBook(path);
+
+    dataChangedSlot();
 }
 
 int AudioBookList::getIndex() {
@@ -63,4 +65,19 @@ void AudioBookList::checkIndexOf(QString path) {
         }
     }
 }
+
+void AudioBookList::indexChangedSlot()
+{
+    emit indexChanged();
+}
+
+void AudioBookList::dataChangedSlot()
+{
+    for (int i = 0; i < m_list.size(); ++i)
+    {
+        m_list.at(i)->readJson();
+    }
+    emit dataChanged();
+}
+
 

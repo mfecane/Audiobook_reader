@@ -25,6 +25,7 @@ public:
     AudioBook(QString path, QObject* parent = nullptr);
     void openBook();
     void closeBook();
+    void readJson();
     void writeJson();
     bool setIndex(int i);
     bool setCurrentFileName(QString filename);
@@ -54,7 +55,7 @@ public slots:
 
 signals:
 
-    void indexChanged(int index);
+    void indexChanged();
 
 private:
 

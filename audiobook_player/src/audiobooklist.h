@@ -18,9 +18,15 @@ public:
     int size();
     void checkIndexOf(QString path);
 
+public slots:
+
+    void indexChangedSlot();
+    void dataChangedSlot();
+
 signals:
 
     void indexChanged();
+    void dataChanged();
 
 private:
 

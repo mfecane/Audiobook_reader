@@ -19,14 +19,12 @@ AudioBookInfo::AudioBookInfo(QString path, QObject* parent):
     QFileInfoList list = d.entryInfoList();
     if(list.size() <= 0) throw std::exception("Not an audiobook");
 
+    m_index = 0;
     readJson();// Load from JSON
 }
 
 void AudioBookInfo::readJson() {
     QJsonObject bookObject = GlobalJSON::getInstance()->getBook(m_path);
-    if(bookObject.contains("index") && bookObject["index"].isDouble()) {
-        setIndex(bookObject["index"].toInt());
-    }
     if(bookObject.contains("size_before") && bookObject["size_before"].isDouble()) {
         int val = bookObject["size_before"].toInt();
         if(val > 0) m_sizeBefore = val;
@@ -39,11 +37,6 @@ void AudioBookInfo::readJson() {
         int val = bookObject["file_pos"].toInt();
         if(val > 0) m_currentFilePos = val; // TODO: use setter
     }
-}
-
-void AudioBookInfo::setIndex(int i)
-{
-    return;
 }
 
 QString AudioBookInfo::name()

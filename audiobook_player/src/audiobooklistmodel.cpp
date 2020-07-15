@@ -58,6 +58,7 @@ void AudioBookListModel::setList(AudioBookList *list)
     beginResetModel();
     m_audiobooklist = list;
     QObject::connect(m_audiobooklist, &AudioBookList::indexChanged, this, &AudioBookListModel::indexChangedSlot);
+    QObject::connect(m_audiobooklist, &AudioBookList::dataChanged, this, &AudioBookListModel::dataChangedSlot);
     m_index = m_audiobooklist->getIndex();
     emit indexChanged();
     endResetModel();
@@ -66,6 +67,13 @@ void AudioBookListModel::setList(AudioBookList *list)
 int AudioBookListModel::index() const
 {
     return m_audiobooklist->getIndex();
+}
+
+void AudioBookListModel::dataChangedSlot()
+{
+    QModelIndex topLeft = QAbstractItemModel::createIndex(0, 0);;
+    QModelIndex bottomRight = QAbstractItemModel::createIndex(m_audiobooklist->size()-1, 0);;
+    emit dataChanged(topLeft, bottomRight, QVector<int>({ProgressRole}));
 }
 
 void AudioBookListModel::setIndex(int value)

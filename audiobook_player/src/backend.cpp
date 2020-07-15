@@ -168,6 +168,7 @@ void BackEnd::setAudioBook(QString path) {
         try {
             m_audiobook = new AudioBook(path);
             m_audioBookList->checkIndexOf(path);
+            connect(m_audiobook, &AudioBook::indexChanged, m_audioBookList, &AudioBookList::dataChangedSlot);
             emit audioBookChanged();
 
             //updatePlayer();
@@ -337,7 +338,9 @@ void BackEnd::isPlayingSlot(QMediaPlayer::State state) {
 
 void BackEnd::autoSave() {
     if(m_audiobook != nullptr && m_audiobook->size() > 0) {
-        m_audiobook->setCurrentFilePos(m_player.position());
+        if(m_player.position() > 0) {
+            m_audiobook->setCurrentFilePos(m_player.position());
+        }
         m_audiobook->writeJson();
     }
     writeCurrentJson();
@@ -358,9 +361,9 @@ void BackEnd::readCurrentJson(QString &savedFolder, QString &savedFile) {
     if(jsonRoot.contains("currentBook") && jsonRoot["currentBook"].isString()) {
         savedFolder = jsonRoot["currentBook"].toString();
     }
-    if(jsonRoot.contains("currentFile") && jsonRoot["currentFile"].isString()) {
-        savedFile = jsonRoot["currentFile"].toString();
-    }
+//    if(jsonRoot.contains("currentFile") && jsonRoot["currentFile"].isString()) {
+//        savedFile = jsonRoot["currentFile"].toString();
+//    }
 }
 
 void BackEnd::writeCurrentJson() {
@@ -368,7 +371,7 @@ void BackEnd::writeCurrentJson() {
         muxJson.lock();
         QJsonObject& jsonRoot = GlobalJSON::getInstance()->getRoot();
         jsonRoot["currentBook"] = m_audiobook->path();
-        jsonRoot["currentFile"] = m_audiobook->current().name;
+//        jsonRoot["currentFile"] = m_audiobook->current().name;
         muxJson.unlock();
     }
 }

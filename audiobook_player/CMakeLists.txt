@@ -35,8 +35,6 @@ add_executable(${PROJECT_NAME} WIN32
                         src/audiobook.cpp
                         src/audiobookinfo.h
                         src/audiobookinfo.cpp
-                        src/audiobookfile.h
-                        src/audiobookfile.cpp
                         src/audiobookmodel.h
                         src/audiobookmodel.cpp
                         src/audiobooklist.h

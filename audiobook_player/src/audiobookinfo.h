@@ -15,10 +15,10 @@ public:
     QString name();
     qreal progress();
     QString path();
+    void readJson();
 
 protected:
 
-    void readJson();
 
     qint64 m_currentFilePos = 0;
     qint64 m_sizeBefore = 0;
@@ -26,8 +26,6 @@ protected:
     qint64 m_sizeTotal = 0;
 
     int m_index;
-
-    void setIndex(int i);
 
 private:
 

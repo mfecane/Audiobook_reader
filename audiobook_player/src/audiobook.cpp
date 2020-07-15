@@ -6,7 +6,6 @@
 #include "audiobook.h"
 #include "globaljson.h"
 #include "backend.h"
-#include "audiobookfile.h"
 #include "filesizerequest.h"
 
 AudioBook::AudioBook(QString path, QObject *parent) :
@@ -29,7 +28,7 @@ AudioBook::AudioBook(QString path, QObject *parent) :
         abf.name = sname;
         m_data.append(abf);
     }
-    emit indexChanged(0);
+    emit indexChanged();
     readJson();
     requestUpdateSizes();
 }
@@ -41,6 +40,14 @@ int AudioBook::size() {
 int AudioBook::index()
 {
     return m_index;
+}
+
+void AudioBook::readJson() {
+    QJsonObject bookObject = GlobalJSON::getInstance()->getBook(m_path);
+    if(bookObject.contains("index") && bookObject["index"].isDouble()) {
+        setIndex(bookObject["index"].toInt());
+    }
+    AudioBookInfo::readJson();
 }
 
 void AudioBook::writeJson() {
@@ -60,7 +67,7 @@ bool AudioBook::setIndex(int i) {
     if(i >=0 && i < m_data.size()) {
         m_index = i;
         updateSizes();
-        emit indexChanged(m_index);
+        emit indexChanged();
         return true;
     }
     else return false;
@@ -82,6 +89,10 @@ QString AudioBook::getCurrentFilePath() {
 
 
 const AudioBookFile &AudioBook::fileAt(int i){
+    if(i < 0 || i >= m_data.size()) {
+        qDebug() << "index overflow" << i;
+        return m_data.at(0);
+    }
     return m_data.at(i);
 }
 

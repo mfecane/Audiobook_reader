@@ -47,6 +47,7 @@ signals:
 public slots:
 
     void indexChangedSlot(); // TODO: Rename
+    void dataChangedSlot(); // TODO: Rename
 
 private:
 
