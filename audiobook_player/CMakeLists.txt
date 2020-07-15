@@ -45,6 +45,8 @@ add_executable(${PROJECT_NAME} WIN32
                         src/audiobooklistmodel.cpp
                         src/qpopka.h
                         src/qpopka.cpp
+                        src/filesizerequest.h
+                        src/filesizerequest.cpp
 
                         src/globaljson.h
                         src/globaljson.cpp

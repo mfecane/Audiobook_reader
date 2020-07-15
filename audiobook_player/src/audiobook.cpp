@@ -1,19 +1,16 @@
 #include <QJsonArray>
 #include <QHash>
 #include <QByteArray>
-#include <QMediaMetaData>
 #include <stdexcept>
 
 #include "audiobook.h"
 #include "globaljson.h"
 #include "backend.h"
-
-
-//TODO: AUDIOBOOK CONSTRUCTOR OBJECT
+#include "audiobookfile.h"
+#include "filesizerequest.h"
 
 AudioBook::AudioBook(QString path, QObject *parent) :
-    AudioBookInfo(path, parent),
-    m_index(0)
+    AudioBookInfo(path, parent)
 {
     QAudioDeviceInfo device = QAudioDeviceInfo::defaultOutputDevice();
     QAudioFormat format = device.preferredFormat();
@@ -28,71 +25,31 @@ AudioBook::AudioBook(QString path, QObject *parent) :
     for(int i = 0; i < list.size(); ++i) {
         const QFileInfo &fi = list.at(i);
         QString sname = fi.fileName();
-        AudioBookFile* abf = new AudioBookFile(fi.fileName());
+        AudioBookFile abf;
+        abf.name = sname;
         m_data.append(abf);
     }
-    m_index = 0;
-    emit indexChanged();
+    emit indexChanged(0);
     readJson();
+    requestUpdateSizes();
 }
 
-void AudioBook::readFileSizes() {
-    for(int i = 0; i < m_data.size(); ++i) {
-        QString path = getFilePath(i);
-        AudioBookFile *abf = m_data.at(i);
-        QMediaPlayer *player = new QMediaPlayer(abf);
-        player->setMedia(QUrl::fromLocalFile(path));
-        abf->setPlayer(player);
-        connect(player, SIGNAL(metaDataAvailableChanged(bool)),
-                abf, SLOT(metaDataChanged(bool)));
-    }
+int AudioBook::size() {
+    return m_data.size();
 }
 
-void AudioBook::requestRecalculateTime() {
-    throw new std::logic_error("Not implemented");
-}
-
-void AudioBook::readJson() {
-    QJsonObject bookObject = GlobalJSON::getInstance()->getBook(m_path);
-    QJsonArray fileArray;
-    if(bookObject.contains("files") && bookObject["files"].isArray()) {
-        fileArray = bookObject["files"].toArray();
-        for(int i = 0; i < fileArray.size(); ++i) {
-            QJsonObject fileObject = fileArray[i].toObject();
-            if(fileObject.contains("name") &&
-                    fileObject["name"].isString() &&
-                    fileObject.contains("pos") &&
-                    fileObject["pos"].isDouble()) {
-                QString name = fileObject["name"].toString();
-                qint64 pos = fileObject["pos"].toDouble();
-                qint64 size = fileObject["size"].toDouble();
-                AudioBookFile *abf = findFile(name);
-                if(abf != nullptr) {
-                    if(pos > 0 ) abf->setPos(pos);
-                    if(size > 0) abf->setSize(size);
-                }
-            }
-        }
-    }
-    if(bookObject.contains("current") && bookObject["current"].isString()) {
-        qDebug() << "XXB: JSON: Found current audiobook file in list of saved audiobooks!";
-        setCurrentFileName(bookObject["current"].toString());
-    }
+int AudioBook::index()
+{
+    return m_index;
 }
 
 void AudioBook::writeJson() {
     QJsonObject bookObject;
-    QJsonArray fileArray;
-    for(const AudioBookFile* f : m_data) {
-        QJsonObject fileObject;
-        fileObject.insert("name", f->fileName());
-        fileObject.insert("pos", f->pos());
-        fileObject.insert("size", f->size());
-        fileArray.append(fileObject);
-    }
-    bookObject["files"] = fileArray;
-    bookObject["current"] = getCurrentFile()->fileName();
     bookObject["url"] = m_path;
+    bookObject["index"] = m_index;
+    bookObject["file_pos"] = m_currentFilePos;
+    bookObject["size_before"] = m_sizeBefore;
+    bookObject["size_total"] = m_sizeTotal;
     GlobalJSON::getInstance()->setBook(bookObject, m_path);
 }
 
@@ -102,8 +59,8 @@ bool AudioBook::setIndex(int i) {
     }
     if(i >=0 && i < m_data.size()) {
         m_index = i;
-        qDebug() << "XMK: fire index changed";
-        emit indexChanged();
+        updateSizes();
+        emit indexChanged(m_index);
         return true;
     }
     else return false;
@@ -111,7 +68,7 @@ bool AudioBook::setIndex(int i) {
 
 bool AudioBook::setCurrentFileName(QString filename) {
     for (int i = 0; i < m_data.size(); ++i) {
-        if ( m_data.at(i)->fileName() == filename) {
+        if ( m_data.at(i).name == filename) {
             setIndex(i);
             return true;
         }
@@ -119,32 +76,23 @@ bool AudioBook::setCurrentFileName(QString filename) {
     return false;
 }
 
-const AudioBookFile* AudioBook::getCurrentFile() {
-    return fileAt(m_index);
-}
-
 QString AudioBook::getCurrentFilePath() {
     return getFilePath(m_index);
 }
 
-qreal AudioBook::progressOf(int i) {
-    if(i == m_index) {
-        const AudioBookFile* abf = fileAt(i);
-        if(abf->size() > 0) {
-            qreal r= (qreal)abf->pos() / abf->size();
-            return r;
-        }
-        return 0;
-    } else if(i < m_index) {
-        return 1;
-    } else {
-        return 0;
-    }
+
+const AudioBookFile &AudioBook::fileAt(int i){
+    return m_data.at(i);
+}
+
+const AudioBookFile &AudioBook::current()
+{
+    return fileAt(m_index);
 }
 
 QString AudioBook::getFilePath(int i) {
     QDir d;
-    QString path = m_path + d.separator() + m_data.at(i)->fileName();
+    QString path = m_path + d.separator() + fileAt(i).name;
     QFile f(path);
     if(f.exists()) {
         return path;
@@ -165,57 +113,81 @@ bool AudioBook::setPrevious() {
     return true;
 }
 
-QString AudioBook::getPath() const {
-    return path();
-}
-
 QString AudioBook::path() const {
     return m_path;
 }
 
-qreal AudioBook::progress() {
-    m_progress = 0;
-    m_totaltime = 0;
+QString AudioBook::folderName() const {
+    QFileInfo fi(m_path);
+    return fi.fileName();
+}
+
+void AudioBook::requestUpdateSizes() {
     for(int i = 0; i < m_data.size(); ++i) {
-        m_totaltime += m_data.at(i)->size();
-        if(i < m_index) {
-            m_progress += m_data.at(i)->size();
-        } else if (i == m_index) {
-            m_progress += m_data.at(i)->pos();
+        QString path = getFilePath(i);
+        FileSizeRequest *fsr = new FileSizeRequest(i, path, this);
+        Q_UNUSED(fsr);
+    }
+}
+
+void AudioBook::updateSizes() { // when ready
+    if(sizeReady == true) {
+        int res = 0;
+        for(int i = 0; i < m_data.size(); ++i) {
+            if(i == m_index)
+            {
+                m_sizeBefore = res;
+                m_sizeCurrentFile = fileAt(i).size;
+            }
+            res += fileAt(i).size;
         }
+        m_sizeTotal = res;
     }
-    if(m_totaltime > 0) {
-        return (qreal)m_progress / m_totaltime;
+}
+
+void AudioBook::requestResult(int index, qint64 vsize)
+{
+    qDebug() << "Size of: " << index << " = " << vsize;
+    m_data[index].size = vsize;
+    bool flag = true;
+    for(int i = 0; i < m_data.size(); ++i) {
+        if(m_data.at(i).size <= 0) flag = false;
     }
-    return 0;
+    if(flag)
+    {
+        qDebug() << "All sizes ready";
+        sizeReady = true;
+        updateSizes();
+    }
+}
+
+qint64 AudioBook::getCurrentFilePos() {
+    return m_currentFilePos;
+}
+
+void AudioBook::setCurrentFilePos(qint64 pos) {
+    m_currentFilePos = pos;
+}
+
+qreal AudioBook::progressOf(int i)
+{
+    if(i < m_index) return 1.0;
+    if(i < m_index) return progressCurrentFile();
+    if(i > m_index) return 0.0;
+    return 0.0;
+}
+
+qreal AudioBook::progressCurrentFile() {
+    if(m_sizeCurrentFile > 0) {
+        return (qreal)(m_currentFilePos) / m_sizeCurrentFile;
+    }
+    else return 0;
 }
 
 int AudioBook::progressInt() {
-    return m_progress;
+    return m_sizeBefore + m_currentFilePos;
 }
 
-int AudioBook::totaltime() {
-    return m_totaltime;
-}
-
-void AudioBook::setFileTime(QString fileName, qint64 pos, bool overwrite) {
-    for (int i = 0; i < m_data.size(); ++i) {
-        if ( m_data.at(i)->fileName() == fileName) {
-            if(!overwrite && m_data.at(i)->pos() != 0) continue;
-            m_data[i]->setPos(pos);
-        }
-    }
-}
-
-AudioBookFile *AudioBook::findFile(QString fileName) {
-    for (int i = 0; i < m_data.size(); ++i) {
-        if ( m_data.at(i)->fileName() == fileName) {
-            return m_data.at(i);
-        }
-    }
-    return nullptr;
-}
-
-BackEnd *AudioBook::backEnd(){
-    return BackEnd::getInstance();
+int AudioBook::sizeTotal() {
+    return m_sizeTotal;
 }

@@ -35,7 +35,7 @@ public:
 
 public slots:
 
-    void indexChangedSlot();
+    void indexChangedSlot(int i);
 
 signals:
 

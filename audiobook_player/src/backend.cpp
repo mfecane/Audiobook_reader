@@ -191,7 +191,7 @@ QString BackEnd::tempo() {
 QString BackEnd::currentTime() {
     if(m_audiobook != nullptr) {
         QString s1 = formatTime(m_audiobook->progressInt());
-        QString s2 = formatTime(m_audiobook->totaltime());
+        QString s2 = formatTime(m_audiobook->sizeTotal());
         return s1 + " / " + s2;
     }
     return QStringLiteral("..:..:.. / ..:..:..");
@@ -255,12 +255,9 @@ void BackEnd::updatePlayer() { // updates player with appropriate file
             emit isPlayingChanged();
 
             m_player.setFile(path);
-            int pos = m_audiobook->getCurrentFile()->pos();
+            int pos = m_audiobook->getCurrentFilePos();
             m_player.setPosition(pos);
             m_player.setVolume(25);
-
-            qDebug() << "set file " << path;
-            qDebug() << "pos" << pos;
         }
     }
 }
@@ -340,7 +337,7 @@ void BackEnd::isPlayingSlot(QMediaPlayer::State state) {
 
 void BackEnd::autoSave() {
     if(m_audiobook != nullptr && m_audiobook->size() > 0) {
-        m_audiobook->setCurrentPos(m_player.position());
+        m_audiobook->setCurrentFilePos(m_player.position());
         m_audiobook->writeJson();
     }
     writeCurrentJson();
@@ -370,8 +367,8 @@ void BackEnd::writeCurrentJson() {
     if(m_audiobook != nullptr && m_audiobook->size() > 0){
         muxJson.lock();
         QJsonObject& jsonRoot = GlobalJSON::getInstance()->getRoot();
-        jsonRoot["currentBook"] = m_audiobook->getPath();
-        jsonRoot["currentFile"] = m_audiobook->getCurrentFile()->fileName();
+        jsonRoot["currentBook"] = m_audiobook->path();
+        jsonRoot["currentFile"] = m_audiobook->current().name;
         muxJson.unlock();
     }
 }

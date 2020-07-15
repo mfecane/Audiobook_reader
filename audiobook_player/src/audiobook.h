@@ -7,9 +7,13 @@
 #include <QUrl>
 
 #include "player.h"
-#include "audiobookfile.h"
 #include "audiobookinfo.h"
 #include "backend.h"
+
+struct AudioBookFile  {
+    qint64 size = 0;
+    QString name = "";
+};
 
 class AudioBook : public AudioBookInfo
 {
@@ -19,87 +23,48 @@ class AudioBook : public AudioBookInfo
 public:
 
     AudioBook(QString path, QObject* parent = nullptr);
-    
     void openBook();
     void closeBook();
-    
-    void readJson();
     void writeJson();
-
-    int fileCount() {
-        return m_data.size();
-    }
-
-    int index() {
-        return m_index;
-    }
-
-    QString name() const {
-        return m_name;
-    }
-
     bool setIndex(int i);
-
     bool setCurrentFileName(QString filename);
-
     const AudioBookFile* getCurrentFile();
     QString getCurrentFilePath();
-    qint64 getCurrentFilePos() {
-        getCurrentFile()->pos();
-    }
-
-    const AudioBookFile* fileAt(int i){
-        return m_data.at(i);
-    }
-
-    qreal progressOf(int i);
-
-    void setCurrentPos(qint64 i) {
-        m_data[m_index]->setPos(i);
-    }
-
+    int size();
+    int index();
+    const AudioBookFile &fileAt(int i);
+    const AudioBookFile &current();
     bool setNext();
     bool setPrevious();
-
-    QString getPath() const;
     QString path() const;
-
-    QString folderName() const {
-        QFileInfo fi(m_path);
-        return fi.fileName();
-    }
-
-    qreal progress();
-
+    QString folderName() const;
+    qreal progressCurrentFile();
+    qreal progressOf(int i);
     int progressInt();
-
-    int totaltime();
-
+    int sizeTotal();
     void readFileSizes();
+    qint64 getCurrentFilePos();
+    void setCurrentFilePos(qint64 pos);
+    void requestUpdateSizes();
+    void updateSizes();
 
-    int size() {
-        return m_data.size();
-    }
+public slots:
 
-    void requestRecalculateTime();
+    void requestResult(int index, qint64 size);
 
 signals:
 
-    void indexChanged();
+    void indexChanged(int index);
 
 private:
 
-    BackEnd *backEnd(); // BackEnd shortcut
-    void setFileTime(QString fileName, qint64 pos, bool overwrite = true);
-    AudioBookFile *findFile(QString fileName);
-
     QString m_name;
     QString m_path;
-    QVector<AudioBookFile*> m_data;
-    int m_index = 0;
+
+    QVector<AudioBookFile> m_data;
     QString getFilePath(int i);
-    qint64 m_progress;
-    qint64 m_totaltime;
+
+    bool sizeReady = false;
 };
 
 

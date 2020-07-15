@@ -25,13 +25,13 @@ QVariant AudioBookModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid() || !m_audiobook)
         return QVariant();
-
-    const AudioBookFile* item = m_audiobook->fileAt(index.row());
+    int i = index.row();
+    const AudioBookFile& item = m_audiobook->fileAt(i);
     switch (role) {
     case TextRole:
-        return QVariant(item->fileName());
+        return QVariant(item.name);
     case ProgressRole:
-        return QVariant(item->progress());
+        return QVariant(m_audiobook->progressOf(i));
     }
 
     return QVariant();
@@ -50,8 +50,11 @@ int AudioBookModel::index() const
     return m_audiobook->index();
 }
 
-void AudioBookModel::indexChangedSlot()
+void AudioBookModel::indexChangedSlot(int i)
 {
+    QModelIndex topLeft = QAbstractItemModel::createIndex(0, 0);;
+    QModelIndex bottomRight = QAbstractItemModel::createIndex(m_audiobook->size()-1, 0);;
+    emit dataChanged(topLeft, bottomRight, QVector<int>({ProgressRole}));
     emit indexChanged();
 }
 
