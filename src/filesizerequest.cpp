@@ -7,11 +7,6 @@ FileSizeRequest::FileSizeRequest(int i, QString path, QObject *parent) :
     m_path = path;
 }
 
-FileSizeRequest::~FileSizeRequest()
-{
-
-}
-
 void FileSizeRequest::process()
 {
     m_player = new QMediaPlayer(this);

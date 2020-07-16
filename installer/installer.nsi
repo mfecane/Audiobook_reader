@@ -1,17 +1,13 @@
-# This installs two files, app.exe and logo.ico, creates a start menu shortcut, builds an uninstaller, and
-# adds uninstall information to the registry for Add/Remove Programs
- 
-# To get started, put this script into a folder with the two files (app.exe, logo.ico, and license.rtf -
-# You'll have to create these yourself) and run makensis on it
- 
-# If you change the names "app.exe", "logo.ico", or "license.rtf" you should do a search and replace - they
-# show up in a few places.
+Unicode True
+
 # All the other settings can be tweaked by editing the !defines at the top of this script
+
 !define APPNAME "Audiobook player"
 !define COMPANYNAME "Gavitka Software"
 !define DESCRIPTION "Audiobook player."
 
 !define APPNAMELC "abook_player"
+!define EXEFILE "audiobook_reader"
 !define BUILDDIR "..\build\"
 
 # These three must be integers
@@ -125,7 +121,7 @@ section "install"
  
  	# Start Menu
 	createDirectory "$SMPROGRAMS\${COMPANYNAME}"
-	createShortCut "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk" "$INSTDIR\monitor_dimmer.exe"
+	createShortCut "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk" "$INSTDIR\${EXEFILE}.exe"
 	# "" "$INSTDIR\logo.ico"
  
 	# Registry information for add/remove programs

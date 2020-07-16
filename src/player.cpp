@@ -45,6 +45,8 @@ Player::~Player() {
 }
 
 void Player::start() {
+    qDebug() << "player starting";
+
     if(m_state == QMediaPlayer::State::StoppedState) {
 
         if(!m_filename.isEmpty()) {

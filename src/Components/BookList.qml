@@ -12,8 +12,10 @@ GridView {
     id: booksView
     //width: parent.width
     anchors.fill: parent
+    anchors.margins: 25
     cellWidth: width/2
     cellHeight: 200
+
 
     model: BookListModel {
         id: bookListModel
@@ -33,13 +35,15 @@ GridView {
 
             Button {
                 anchors.fill: parent
-                anchors.margins: 10
+                anchors.margins: 20
                 state: (down | wrapper.GridView.isCurrentItem) ? "pressed" : hovered ? "hover" : "default"
                 contentItem:
                     Label
                     {
                         leftPadding: 10
                         text: model.text
+                        width: wrapper.width - 40
+                        wrapMode: Label.WordWrap
                     }
                 background: Rectangle
                 {

@@ -11,7 +11,6 @@ class FileSizeRequest : public QObject
 
 public:
     FileSizeRequest(int i, QString path, QObject *parent = nullptr);
-    ~FileSizeRequest();
 
 signals:
 
@@ -28,8 +27,6 @@ private:
     int m_index;
     int size;
     QString m_path;
-    bool m_finished = false;
-
     QMediaPlayer* m_player;
 
 };

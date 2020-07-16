@@ -27,36 +27,36 @@ file(GLOB_RECURSE SRC_UI
 )
 
 add_executable(${PROJECT_NAME} WIN32 
-			src/main.cpp
-			src/backend.h
-			src/backend.cpp
+    src/main.cpp
+    src/backend.h
+    src/backend.cpp
 
-			src/audiobook.h
-                        src/audiobook.cpp
-                        src/audiobookinfo.h
-                        src/audiobookinfo.cpp
-                        src/audiobookmodel.h
-                        src/audiobookmodel.cpp
-                        src/audiobooklist.h
-                        src/audiobooklist.cpp
-                        src/audiobooklistmodel.h
-                        src/audiobooklistmodel.cpp
-                        src/filesizerequest.h
-                        src/filesizerequest.cpp
-                        src/audiobookc.h
-                        src/audiobookc.cpp
+    src/audiobook.h
+    src/audiobook.cpp
+    src/audiobookinfo.h
+    src/audiobookinfo.cpp
+    src/audiobookmodel.h
+    src/audiobookmodel.cpp
+    src/audiobooklist.h
+    src/audiobooklist.cpp
+    src/audiobooklistmodel.h
+    src/audiobooklistmodel.cpp
+    src/filesizerequest.h
+    src/filesizerequest.cpp
+    src/audiobookc.h
+    src/audiobookc.cpp
 
-                        src/globaljson.h
-                        src/globaljson.cpp
-                        src/player.h
-                        src/player.cpp
+    src/globaljson.h
+    src/globaljson.cpp
+    src/player.h
+    src/player.cpp
 
-                        README.md
-                        installer/installer.nsi
+    README.md
+    installer/installer.nsi
 
-			${SRC_UI}
-			${RESOURCES}
-			)
+    ${SRC_UI}
+    ${RESOURCES}
+    )
 
 source_group("ui" FILES ${SRC_UI})
 
@@ -77,14 +77,6 @@ target_link_libraries(${PROJECT_NAME} "SoundTouchDLL_x64.lib")
 # set startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
-#install
-
-# Retrieve the absolute path to qmake and then use that path to find
-# the binaries
-# get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
-# get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
-# find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build event to MyTest
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
         "C:/dev/lib/soundtouch_dll-2.1.1/SoundTouchDLL_x64.dll"      # <--this is in-file
@@ -92,6 +84,11 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build 
 
 # RUNNUNG WINDEPLOYQT
 
+# Retrieve the absolute path to qmake and then use that path to find
+# the binaries
+
+get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -103,14 +100,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 #useful garbage
 
-#include_directories("C:/dev/lib/glfw-3.3.2.bin.WIN64/include")
-#link_directories("C:/dev/lib/glfw-3.3.2.bin.WIN64/lib-vc2019")
 #ADD_DEFINITIONS(-DUNICODE)
 #ADD_DEFINITIONS(-D_UNICODE)
-#target_link_libraries(${PROJECT_NAME} "glfw3")
-#target_link_libraries(${PROJECT_NAME} "opengl32.lib")
-#target_link_libraries(${PROJECT_NAME} "Dxva2.lib")
-#target_link_libraries(${PROJECT_NAME} "d2d1.lib")
-#target_link_libraries(${PROJECT_NAME} "Dwmapi.lib")
-#target_link_libraries(${PROJECT_NAME} "User32.lib")
+
 #target_link_libraries(${PROJECT_NAME} "Comctl32.lib")
