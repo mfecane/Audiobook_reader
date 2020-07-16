@@ -58,23 +58,15 @@ int AudioBookList::size() {
 void AudioBookList::checkIndexOf(QString path) {
     for(int i = 0; i < m_list.size(); ++i) {
         if(m_list.at(i)->path() == path) {
-            qDebug() << "Audiobook found in list";
             m_index = i;
             emit indexChanged();
-            // TODO: Notify model
         }
     }
 }
 
-void AudioBookList::indexChangedSlot()
-{
-    emit indexChanged();
-}
-
 void AudioBookList::dataChangedSlot()
 {
-    for (int i = 0; i < m_list.size(); ++i)
-    {
+    for (int i = 0; i < m_list.size(); ++i) {
         m_list.at(i)->readJson();
     }
     emit dataChanged();

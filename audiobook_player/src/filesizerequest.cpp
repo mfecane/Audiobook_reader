@@ -5,14 +5,20 @@ FileSizeRequest::FileSizeRequest(int i, QString path, QObject *parent) :
 {
     m_index = i;
     m_path = path;
+}
 
+FileSizeRequest::~FileSizeRequest()
+{
+
+}
+
+void FileSizeRequest::process()
+{
+    // FIX memory management here
     m_player = new QMediaPlayer(this);
-
-    m_player->setMedia(QUrl::fromLocalFile(path));
+    m_player->setMedia(QUrl::fromLocalFile(m_path));
     connect(m_player, SIGNAL(metaDataAvailableChanged(bool)),
                     this, SLOT(metaDataChangedSlot(bool)));
-    connect(this, SIGNAL(metaDataChanged(int, qint64)),
-                    parent, SLOT(requestResult(int, qint64)));
 }
 
 void FileSizeRequest::metaDataChangedSlot(bool v)
@@ -22,5 +28,6 @@ void FileSizeRequest::metaDataChangedSlot(bool v)
         if(size > 0) {
             emit metaDataChanged(m_index, size);
         }
-    }
+    };
+    emit finished();
 }

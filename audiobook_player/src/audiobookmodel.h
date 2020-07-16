@@ -15,8 +15,7 @@ Q_OBJECT
 public:
 
     enum AudioBookRoles {
-        TextRole = Qt::UserRole +1,
-        ProgressRole
+        TextRole = Qt::UserRole +1
     };
 
     AudioBookModel();

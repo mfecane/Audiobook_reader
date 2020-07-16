@@ -28,7 +28,6 @@ public:
     void readJson();
     void writeJson();
     bool setIndex(int i);
-    bool setCurrentFileName(QString filename);
     const AudioBookFile* getCurrentFile();
     QString getCurrentFilePath();
     int size();
@@ -59,11 +58,12 @@ signals:
 
 private:
 
+    QString getFilePath(int i);
+
     QString m_name;
     QString m_path;
 
     QVector<AudioBookFile> m_data;
-    QString getFilePath(int i);
 
     bool sizeReady = false;
 };

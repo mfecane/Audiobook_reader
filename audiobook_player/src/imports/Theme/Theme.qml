@@ -11,4 +11,6 @@ QtObject {
     readonly property color background_white: "#F4F4F9"
     readonly property color main_gray: "#BFBFBF"
     readonly property color main_light_gray: "#CCCCCC"
+    readonly property color main_derk_gray: "#3d4759"
+
 }

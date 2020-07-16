@@ -20,7 +20,6 @@ public:
 
 public slots:
 
-    void indexChangedSlot();
     void dataChangedSlot();
 
 signals:

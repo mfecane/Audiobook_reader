@@ -5,11 +5,13 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QDebug>
+#include <QDir>
 
 GlobalJSON* GlobalJSON::m_instance = nullptr;
 
 
-QJsonObject GlobalJSON::getBook(QString path) {
+QJsonObject GlobalJSON::getBook(QString path)
+{
     m_mux.lock();
     QJsonObject bookObject;
     QJsonArray bookArray;
@@ -28,7 +30,8 @@ QJsonObject GlobalJSON::getBook(QString path) {
     return bookObject;
 }
 
-void GlobalJSON::setBook(QJsonObject currentBookObject, QString path) {
+void GlobalJSON::setBook(QJsonObject currentBookObject, QString path)
+{
     m_mux.lock();
     QJsonArray bookArray;
     bool success = false;
@@ -52,7 +55,8 @@ void GlobalJSON::setBook(QJsonObject currentBookObject, QString path) {
     m_mux.unlock();
 }
 
-bool GlobalJSON::saveJSON() {
+bool GlobalJSON::saveJSON()
+{
     if(enableSave) {
         QFile saveFile(m_path);
         if (!saveFile.open(QIODevice::WriteOnly)) {
@@ -64,9 +68,12 @@ bool GlobalJSON::saveJSON() {
         saveFile.close();
         return true;
     }
+    return false;
 }
 
-bool GlobalJSON::loadJSON() {
+bool GlobalJSON::loadJSON()
+{
+    createJSON();
     QFile loadFile(m_path);
     if (!loadFile.open(QIODevice::ReadOnly)) {
         qWarning("Couldn't open save file.");
@@ -75,6 +82,21 @@ bool GlobalJSON::loadJSON() {
     QByteArray saveData = loadFile.readAll();
     QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
     m_root = loadDoc.object();
+    return true;
+}
+
+bool GlobalJSON::createJSON()
+{
+    QFile saveFile(m_path);
+    if(!saveFile.exists()) {
+        if(!saveFile.open(QIODevice::WriteOnly)) {
+            qWarning("Couldn't open save file.");
+            return false;
+        }
+        QJsonDocument saveDoc(m_root);
+        saveFile.write(saveDoc.toJson());
+        saveFile.close();
+    }
     return true;
 }
 

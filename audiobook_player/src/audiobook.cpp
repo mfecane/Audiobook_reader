@@ -2,6 +2,7 @@
 #include <QHash>
 #include <QByteArray>
 #include <stdexcept>
+#include <QString>
 
 #include "audiobook.h"
 #include "globaljson.h"
@@ -73,20 +74,9 @@ bool AudioBook::setIndex(int i) {
     else return false;
 }
 
-bool AudioBook::setCurrentFileName(QString filename) {
-    for (int i = 0; i < m_data.size(); ++i) {
-        if ( m_data.at(i).name == filename) {
-            setIndex(i);
-            return true;
-        }
-    }
-    return false;
-}
-
 QString AudioBook::getCurrentFilePath() {
     return getFilePath(m_index);
 }
-
 
 const AudioBookFile &AudioBook::fileAt(int i){
     if(i < 0 || i >= m_data.size()) {
@@ -115,12 +105,14 @@ QString AudioBook::getFilePath(int i) {
 bool AudioBook::setNext() {
     if(m_index >= m_data.size()) return false;
     ++m_index;
+    emit indexChanged();
     return true;
 }
 
 bool AudioBook::setPrevious() {
     if(m_index <= 0) return false;
     --m_index;
+    emit indexChanged();
     return true;
 }
 
@@ -133,11 +125,21 @@ QString AudioBook::folderName() const {
     return fi.fileName();
 }
 
-void AudioBook::requestUpdateSizes() {
+void AudioBook::requestUpdateSizes() { // move to thread
     for(int i = 0; i < m_data.size(); ++i) {
         QString path = getFilePath(i);
-        FileSizeRequest *fsr = new FileSizeRequest(i, path, this);
-        Q_UNUSED(fsr);
+        QThread* thr = new QThread();
+        FileSizeRequest *fsr = new FileSizeRequest(i, path);
+        fsr->moveToThread(thr);
+        //TODO: error handling
+        //connect(fsr, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
+        connect(thr, SIGNAL(started()), fsr, SLOT(process()));
+        connect(fsr, SIGNAL(finished()), thr, SLOT(quit()));
+        connect(fsr, SIGNAL(finished()), fsr, SLOT(deleteLater()));
+        connect(thr, SIGNAL(finished()), thr, SLOT(deleteLater()));
+        connect(fsr, SIGNAL(metaDataChanged(int, qint64)),
+                this, SLOT(requestResult(int, qint64)));
+        thr->start();
     }
 }
 
@@ -158,7 +160,6 @@ void AudioBook::updateSizes() { // when ready
 
 void AudioBook::requestResult(int index, qint64 vsize)
 {
-    qDebug() << "Size of: " << index << " = " << vsize;
     m_data[index].size = vsize;
     bool flag = true;
     for(int i = 0; i < m_data.size(); ++i) {

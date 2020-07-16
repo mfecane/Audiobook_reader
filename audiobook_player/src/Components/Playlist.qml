@@ -29,7 +29,6 @@ Rectangle {
                 id: wrapper
                 height: 58
                 width: playlistView.width
-                property real progress: model.progress;
 
                 Button {
                     anchors.topMargin: 10
@@ -38,12 +37,14 @@ Rectangle {
                     anchors.bottomMargin: 10
                     anchors.fill: parent
 
-                    state: (wrapper.down | wrapper.ListView.isCurrentItem) ?
-                               "pressed" : wrapper.hovered ?
-                                   "hover" : "default"
+                    state: (down | wrapper.ListView.isCurrentItem) ?    "pressed" :
+                            hovered ?                                   "hover" :
+                            playlistView.currentIndex > index ?         "done" :
+                                                                        "default"
 
                     contentItem: Label {
                         leftPadding: 10
+                        font.pixelSize: 16
                         text: model.text
                         color: "white"
                     }
@@ -52,13 +53,6 @@ Rectangle {
                         Rectangle {
                         id:backgroundRect
                         color: Theme.background_color
-                        Rectangle {
-                            height:4
-                            color: Theme.button_color
-                            width: backgroundRect.width * progress
-                            anchors.left: parent.left
-                            anchors.bottom: parent.bottom
-                            }
                         } // Rectangle:backgroundRect
                     states: [
                         State {
@@ -80,6 +74,13 @@ Rectangle {
                             PropertyChanges {
                                 target: backgroundRect
                                 color: Theme.background_color
+                            }
+                        },
+                        State {
+                            name : "done"
+                            PropertyChanges {
+                                target: backgroundRect
+                                color: Theme.main_derk_gray
                             }
                         }
                     ] // states

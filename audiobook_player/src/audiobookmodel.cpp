@@ -9,7 +9,6 @@ QHash<int, QByteArray> AudioBookModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[TextRole] = "text";
-    roles[ProgressRole] = "progress";
     return roles;
 }
 
@@ -30,8 +29,6 @@ QVariant AudioBookModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case TextRole:
         return QVariant(item.name);
-    case ProgressRole:
-        return QVariant(m_audiobook->progressOf(i));
     }
 
     return QVariant();
@@ -52,9 +49,6 @@ int AudioBookModel::index() const
 
 void AudioBookModel::indexChangedSlot()
 {
-    QModelIndex topLeft = QAbstractItemModel::createIndex(0, 0);;
-    QModelIndex bottomRight = QAbstractItemModel::createIndex(m_audiobook->size()-1, 0);;
-    emit dataChanged(topLeft, bottomRight, QVector<int>({ProgressRole}));
     emit indexChanged();
 }
 

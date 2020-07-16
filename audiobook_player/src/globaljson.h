@@ -26,6 +26,7 @@ public:
 
     bool saveJSON();
     bool loadJSON();
+    bool createJSON();
 
 private:
 

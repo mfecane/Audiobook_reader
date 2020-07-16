@@ -48,9 +48,6 @@ public:
     static BackEnd* getInstance();
 
     QString FileName() {return m_currentFileName;}
-
-    QUrl getFileUrl();
-
     bool isPlaying();
 
     qreal fileProgress();
@@ -94,9 +91,6 @@ signals:
     void fileProgressChanged();
     void rootPathChanged();
     void bookFileListChanged();
-    void playListIndexChanged();
-    void playlistChanged();
-    void playlistItemChanged();
     void tempoChanged();
     void volumeChanged();
     void audioBookChanged();
@@ -110,7 +104,7 @@ public slots:
     void prev();
     void jumpForeward(int sec);
     void jumpBack(int sec);
-    void speedUp();
+    void indexChangedSlot();
     void positionChangedSlot(int pos);
     void isPlayingSlot(QMediaPlayer::State state);
     void autoSave();
@@ -124,7 +118,7 @@ private:
     bool loadJson();
     bool saveJson();
     void writeCurrentJson();
-    void readCurrentJson(QString &savedFolder, QString &savedFile);
+    void readCurrentJson(QString &savedFolder, int &savedIndex);
     void setupAutosave();
 
     static BackEnd* m_instance;
