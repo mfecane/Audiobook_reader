@@ -86,13 +86,12 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build 
         "C:/dev/lib/soundtouch_dll-2.1.1/SoundTouchDLL_x64.dll"      # <--this is in-file
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
-# add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#     COMMAND "${CMAKE_COMMAND}" -E
-#         env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
-#             "$<TARGET_FILE:${PROJECT_NAME}>" ARGS --qmldir ${CMAKE_SOURCE_DIR}/src/
-#     COMMENT "Running windeployqt..."
-# )
-
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E
+        env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
+            "$<TARGET_FILE:${PROJECT_NAME}>" ARGS --qmldir ${CMAKE_SOURCE_DIR}/src/
+    COMMENT "Running windeployqt..."
+)
 
 #useful garbage
 

@@ -34,6 +34,11 @@ QVariant AudioBookModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+AudioBook *AudioBookModel::audioBook()
+{
+    return m_audiobook;
+}
+
 void AudioBookModel::setAudioBook(AudioBook *value) {
     beginResetModel();
     m_audiobook = value;
