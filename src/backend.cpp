@@ -253,7 +253,9 @@ void BackEnd::autoLoad()
     int index;
     readCurrentJson(savedFolder, index);
     setAudioBook(savedFolder);
-    m_audiobook->setIndex(index);
+    if(m_audiobook != nullptr) {
+        m_audiobook->setIndex(index);
+    }
 }
 
 void BackEnd::closeAudioBook()

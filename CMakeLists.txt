@@ -50,6 +50,10 @@ add_executable(${PROJECT_NAME} WIN32
                         src/globaljson.cpp
                         src/player.h
                         src/player.cpp
+
+                        README.md
+                        installer/installer.nsi
+
 			${SRC_UI}
 			${RESOURCES}
 			)
@@ -85,6 +89,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build 
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
         "C:/dev/lib/soundtouch_dll-2.1.1/SoundTouchDLL_x64.dll"      # <--this is in-file
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+# RUNNUNG WINDEPLOYQT
+
+find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E

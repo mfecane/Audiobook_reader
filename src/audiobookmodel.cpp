@@ -40,6 +40,7 @@ AudioBook *AudioBookModel::audioBook()
 }
 
 void AudioBookModel::setAudioBook(AudioBook *value) {
+    if(value == nullptr) return;
     beginResetModel();
     m_audiobook = value;
     endResetModel();
@@ -49,6 +50,8 @@ void AudioBookModel::setAudioBook(AudioBook *value) {
 
 int AudioBookModel::index() const
 {
+    if(m_audiobook == nullptr) return 0;
+
     return m_audiobook->index();
 }
 
@@ -59,6 +62,8 @@ void AudioBookModel::indexChangedSlot()
 
 void AudioBookModel::setIndex(int value)
 {
+    if(m_audiobook == nullptr) return;
+
     m_audiobook->setIndex(value);
     indexChangedSlot();
     emit indexChanged();
