@@ -12,6 +12,7 @@
 
 #build_dirs
 build-*
+visualstudio/
 
 libav/
 
