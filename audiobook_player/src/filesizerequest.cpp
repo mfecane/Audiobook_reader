@@ -14,7 +14,6 @@ FileSizeRequest::~FileSizeRequest()
 
 void FileSizeRequest::process()
 {
-    // FIX memory management here
     m_player = new QMediaPlayer(this);
     m_player->setMedia(QUrl::fromLocalFile(m_path));
     connect(m_player, SIGNAL(metaDataAvailableChanged(bool)),
