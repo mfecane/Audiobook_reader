@@ -1,12 +1,14 @@
 #include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <stdexcept>
+#include <QIcon>
 
 #include "backend.h"
 #include "audiobookmodel.h"
 #include "audiobooklistmodel.h"
 #include "audiobook.h"
-#include <exception>
 
 int main(int argc, char *argv[]) {
 
@@ -16,7 +18,7 @@ int main(int argc, char *argv[]) {
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     AudioBookList audioBookList("C:/Audiobook");
 
@@ -45,6 +47,7 @@ int main(int argc, char *argv[]) {
 //    engine.rootContext()->setContextProperty(QStringLiteral("ctxAudioBook"), audioBook);
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
+    app.setWindowIcon(QIcon("qrc:/images/icon.ico"));
 
     return app.exec();
 }

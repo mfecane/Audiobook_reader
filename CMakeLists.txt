@@ -11,7 +11,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 COMPONENTS Widgets Quick Core QuickControls2 Multimedia REQUIRED)
 
-qt5_add_resources(RESOURCES src/res.qrc)
+qt5_add_resources(QTRESOURCES src/res.qrc)
 
 file(GLOB_RECURSE SRC_UI
     src/main.qml
@@ -24,13 +24,18 @@ file(GLOB_RECURSE SRC_UI
     src/Components/OpenFolderDialog.qml
     src/Components/Ass.qml
     src/Components/SettingsButton.qml
+    src/Components/PlayButton.qml
+    src/Components/AppButton.qml
+)
+
+set(RESOURCES
+    src/res.rc
 )
 
 add_executable(${PROJECT_NAME} WIN32 
     src/main.cpp
     src/backend.h
     src/backend.cpp
-
     src/audiobook.h
     src/audiobook.cpp
     src/audiobookinfo.h
@@ -45,17 +50,16 @@ add_executable(${PROJECT_NAME} WIN32
     src/filesizerequest.cpp
     src/audiobookc.h
     src/audiobookc.cpp
-
     src/globaljson.h
     src/globaljson.cpp
     src/player.h
     src/player.cpp
-
     README.md
     installer/installer.nsi
 
     ${SRC_UI}
     ${RESOURCES}
+    ${QTRESOURCES}
     )
 
 source_group("ui" FILES ${SRC_UI})
@@ -66,7 +70,6 @@ set(QML_IMPORT_PATH
 
 ADD_DEFINITIONS(-DUNICODE)
 ADD_DEFINITIONS(-D_UNICODE)
-
 
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt5::Core)

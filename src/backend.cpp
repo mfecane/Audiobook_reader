@@ -131,17 +131,6 @@ void BackEnd::setRootPathUrl(QString url)
     setRootPath(u.toLocalFile());
 }
 
-QList<QObject *> BackEnd::bookFileList()
-{
-    return m_bookFileList;
-}
-
-int BackEnd::playlistIndex()
-{
-    if(m_audiobook == nullptr) return 0;
-    return m_audiobook->index();
-}
-
 void BackEnd::increaseTempo()
 {
     int index = m_tempo + 1;
@@ -233,6 +222,12 @@ void BackEnd::setVolume(qreal value)
 {
     m_volume = value;
     emit volumeChanged();
+}
+
+QString BackEnd::audioBookName()
+{
+    if(m_audiobook == nullptr)  return QString("");
+    return m_audiobook->name();
 }
 
 void BackEnd::setEngine(QQmlApplicationEngine *engine)

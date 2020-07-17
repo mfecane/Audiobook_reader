@@ -76,6 +76,9 @@ section "install"
 	File "${BUILDDIR}*.dll"
 
 	# QML stuff
+	setOutPath $INSTDIR\audio
+	File /nonfatal /r "${BUILDDIR}audio\"
+
 	setOutPath $INSTDIR\bearer
 	File /nonfatal /r "${BUILDDIR}bearer\"
 
@@ -164,6 +167,7 @@ section "uninstall"
  
 	# Remove files
 
+	rmDir /r $INSTDIR\audio
 	rmDir /r $INSTDIR\bearer
 	rmDir /r $INSTDIR\iconengines
 	rmDir /r $INSTDIR\imageformats

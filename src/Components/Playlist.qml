@@ -8,7 +8,7 @@ import io.qt.examples.audiobookmodel 1.0
 import Theme 1.0
 
 Rectangle {
-    color: Theme.background_dark
+    color: Theme.background_color_dark2
 
     ListView {
         id: playlistView
@@ -27,14 +27,14 @@ Rectangle {
             id: playlistDelegate
             Item {
                 id: wrapper
-                height: 58
+                height: 50
                 width: playlistView.width
 
                 Button {
-                    anchors.topMargin: 10
-                    anchors.leftMargin: 15
-                    anchors.rightMargin: 15
-                    anchors.bottomMargin: 10
+                    anchors.topMargin: 0
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    anchors.bottomMargin: 0
                     anchors.fill: parent
 
                     state: (down | wrapper.ListView.isCurrentItem) ?    "pressed" :
@@ -42,45 +42,73 @@ Rectangle {
                             playlistView.currentIndex > index ?         "done" :
                                                                         "default"
 
-                    contentItem: Label {
-                        leftPadding: 10
-                        font.pixelSize: 16
-                        text: model.text
-                        color: "white"
-                    }
+                    contentItem:
+                        Item {
+                        anchors.fill:parent
+                            Label {
+                                anchors.verticalCenter: parent.verticalCenter
+                                id: fileLabel
+                                leftPadding: 10
+                                font.pixelSize: 16
+                                text: model.text
+                                color: Theme.accent2
+                            }
+                        }
 
                     background:
                         Rectangle {
                         id:backgroundRect
-                        color: Theme.background_color
+                        color: Theme.background_color_dark2
+                            Rectangle {
+                                width:parent.width
+                                height:1
+                                anchors.bottom:parent.bottom
+                                color:Theme.dark_separator
+                            }
                         } // Rectangle:backgroundRect
                     states: [
                         State {
                             name : "hover"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.button_color_hover
+                                color: Theme.dark_accent
+                            }
+                            PropertyChanges {
+                                target: fileLabel
+                                color: Theme.accent2
                             }
                         },
                         State {
                             name : "pressed"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.main_gray
+                                color: Theme.dark_accent
+                            }
+                            PropertyChanges {
+                                target: fileLabel
+                                color: Theme.accent2
                             }
                         },
                         State {
                             name : "default"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.background_color
+                                color: Theme.background_color_dark2
+                            }
+                            PropertyChanges {
+                                target: fileLabel
+                                color: Theme.accent2
                             }
                         },
                         State {
                             name : "done"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.main_derk_gray
+                                color: Theme.background_color_dark2
+                            }
+                            PropertyChanges {
+                                target: fileLabel
+                                color: Theme.dark_text
                             }
                         }
                     ] // states

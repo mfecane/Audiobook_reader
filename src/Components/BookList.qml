@@ -48,7 +48,7 @@ GridView {
                 background: Rectangle
                 {
                     id: backgroundRect
-                    color: Theme.background_color
+                    color: Theme.background_color_dark2
                     //color: wrapper.ListView.isCurrentItem ? "red" : "black"
                     Rectangle {
                         height:4

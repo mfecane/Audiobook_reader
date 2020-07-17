@@ -1,3 +1,5 @@
+#include <QDebug>
+
 #include "filesizerequest.h"
 
 FileSizeRequest::FileSizeRequest(int i, QString path, QObject *parent) :
@@ -17,6 +19,8 @@ void FileSizeRequest::process()
 
 void FileSizeRequest::metaDataChangedSlot(bool v)
 {
+    //qDebug() << "metaDataChangedSlot index " << m_index;
+    //qDebug() << "path " << m_path;
     if(v) {
         qint64 size = m_player->metaData(QMediaMetaData::Duration).toInt();
         if(size > 0) {

@@ -35,6 +35,7 @@ class BackEnd : public QObject
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
 
     Q_PROPERTY(QString currentTime READ currentTime NOTIFY fileProgressChanged)
+    Q_PROPERTY(QString audioBookName READ audioBookName NOTIFY audioBookChanged)
 
     Q_PROPERTY(AudioBookList* audioBookList READ audioBookList NOTIFY rootPathChanged)
     Q_PROPERTY(AudioBook* audioBook READ audioBook NOTIFY audioBookChanged)
@@ -65,6 +66,8 @@ public:
 
     qreal volume();
     void setVolume(qreal value);
+
+    QString audioBookName();
 
 // </PROPERTIES>
 

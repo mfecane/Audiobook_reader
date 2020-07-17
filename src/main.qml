@@ -17,6 +17,7 @@ Window {
     minimumWidth: 300
     minimumHeight: 640
     title: qsTr("Audiobook Reader")
+    flags: Qt.FramelessWindowHint
 
     Settings {
         property alias x: window.x
@@ -38,7 +39,15 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    color: "slateblue"
+                    color: Theme.background_color_dark
+//                    Image { //Shadow
+//                        anchors.top: parent.top
+//                        anchors.bottom: parent.bottom
+//                        anchors.right: parent.right
+//                        fillMode: Image.Tile
+//                        width: 37
+//                        source: "qrc:/images/shadow.png"
+//                    }
                     BookList {
                         id:booksPage
                         anchors.fill: parent
@@ -49,11 +58,11 @@ Window {
                         anchors.fill: parent
                         visible: false
                     }
-                }
+                } // Rectangle
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 70
-                    color: "white"
+                    color: Theme.background_color_dark3
                     SettingsButton {
                         width:parent.width
                         onClicked: {
@@ -61,9 +70,9 @@ Window {
                             booksPage.visible = !booksPage.visible
                         }
                     }
-                }
-            }
-        }
+                } // Rectangle
+            } //ColumnLayout
+        } // Rectangle
         Rectangle {
             Layout.preferredWidth: 350
             Layout.fillHeight: true

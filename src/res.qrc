@@ -13,7 +13,9 @@
         <file>Components/Ass.qml</file>
         <file>Components/SettingsButton.qml</file>
         <file>Components/PlayButton.qml</file>
+        <file>Components/AppButton.qml</file>
         <file>../images/gear.png</file>
+        <file>../images/back.png</file>
         <file>../images/jmp_back.png</file>
         <file>../images/jmp_back_x2.png</file>
         <file>../images/jmp_fwd.png</file>
@@ -24,6 +26,11 @@
         <file>../images/plus.png</file>
         <file>../images/prev.png</file>
         <file>../images/pause.png</file>
-        <file>../images/tab_button.png</file>
+        <file>../images/icon.ico</file>
+        <file>../images/close.png</file>
+        <file>../images/restore.png</file>
+        <file>../images/collapse.png</file>
+        <file>../images/full.png</file>
+        <file>../images/shadow.png</file>
     </qresource>
 </RCC>

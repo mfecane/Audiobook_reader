@@ -3,7 +3,7 @@ import QtQuick.Controls 2.1
 import Theme 1.0
 
 Button {
-    implicitWidth: 115
+    implicitWidth: 90
     implicitHeight: implicitWidth
     id: rootId
 
@@ -25,11 +25,10 @@ Button {
 
     background: Rectangle {
         id:backgroundRect
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.centerIn: parent
         width:rootId.width
         height: width
-        color: Theme.button_color
+        color: Theme.accent
         radius: width * 0.5
     }
 
@@ -52,7 +51,7 @@ Button {
             name : "default"
             PropertyChanges {
                 target: backgroundRect
-                color: Theme.button_color
+                color: Theme.accent
             }
         }
     ]
