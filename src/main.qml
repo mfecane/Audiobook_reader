@@ -4,12 +4,15 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Universal 2.12
 import Qt.labs.settings 1.0
+//import QtWinExtras 1.0
+
 
 import io.qt.examples.backend 1.0
 import Theme 1.0
 import "Components"
+import kh.components 1.0
 
-Window {
+BLWindow {
     id: window
     visible: true
     width: 640
@@ -17,7 +20,8 @@ Window {
     minimumWidth: 300
     minimumHeight: 640
     title: qsTr("Audiobook Reader")
-    flags: Qt.FramelessWindowHint
+    flags: Qt.Window |
+           Qt.FramelessWindowHint
 
     Settings {
         property alias x: window.x

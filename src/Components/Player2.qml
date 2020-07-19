@@ -25,13 +25,13 @@ Rectangle {
             Layout.preferredWidth: 46
             Layout.preferredHeight: 30
             src:"qrc:/images/collapse.png"
-            onClicked: window.hide()
+            onClicked: window.showMinimized()
             }
         AppButton {
             Layout.preferredWidth: 46
             Layout.preferredHeight: 30
-            src:"qrc:/images/full.png"
-            onClicked: window.showMaximized()
+            src: (window.visibility === 4) ? "qrc:/images/restore.png" :  "qrc:/images/full.png"
+            onClicked: (window.visibility === 4) ? window.showNormal() : window.showMaximized()
             }
         AppButton {
             Layout.preferredWidth: 46
@@ -48,17 +48,55 @@ Rectangle {
         anchors.fill:parent
         spacing:10
 
-
-        Label { // Title
-            Layout.alignment: Qt.AlignHCenter
-            text: BackEnd.audioBookName
-            color: Theme.accent2
-            font.pixelSize: 20
-            font.weight: Font.DemiBold
+        Flickable{
+            id: titleFlick
             Layout.topMargin: 50
             Layout.rightMargin: 20
             Layout.leftMargin: 20
-        }
+            Layout.fillWidth: true
+            Layout.preferredHeight:  titleLabel.height
+            contentWidth: titleLabel.width
+            contentHeight: titleLabel.height
+            flickableDirection: Flickable.HorizontalFlick
+            height: titleLabel.height
+            clip:true
+            state: "stateright"
+
+
+            Label {
+                id: titleLabel
+                Layout.alignment: Qt.AlignHCenter
+                text: BackEnd.audioBookName
+                color: Theme.accent2
+                font.pixelSize: 20
+                font.weight: Font.DemiBold
+            } // Label
+
+//            onMovementStarted: {
+//                anim.pause();
+//            }
+
+//            onMovementEnded: {
+//                anim.resume();
+//            }
+
+            SequentialAnimation on contentX {
+                id: anim
+                loops: Animation.Infinite
+//                property int limit: Qt.binding(function(){return titleLabel.width - titleFlick.width})
+                property int limit: titleLabel.width - titleFlick.width;
+                NumberAnimation {
+                    from: 0;
+                    to: anim.limit
+                    duration: anim.limit * 20
+                }
+                NumberAnimation {
+                    from: anim.limit
+                    to: 0;
+                    duration: anim.limit * 20
+                }
+            }
+        } // FLickable
         ProgressBar {
             from: 0.0
             to: 1.0

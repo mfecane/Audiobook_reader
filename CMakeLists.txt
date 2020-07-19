@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
-include_directories("C:/dev/lib/soundtouch_dll-2.1.1")
-link_directories("C:/dev/lib/soundtouch_dll-2.1.1")
+include_directories("D:/dev/lib/soundtouch_dll-2.1.1")
+link_directories("D:/dev/lib/soundtouch_dll-2.1.1")
 
 project("audiobook_reader")
 
@@ -54,6 +54,10 @@ add_executable(${PROJECT_NAME} WIN32
     src/globaljson.cpp
     src/player.h
     src/player.cpp
+    src/blwindow.h
+    src/blwindow.cpp
+    src/blheader.h
+    src/blheader.cpp
     README.md
     installer/installer.nsi
 
@@ -74,15 +78,17 @@ ADD_DEFINITIONS(-D_UNICODE)
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt5::Core)
 target_link_libraries(${PROJECT_NAME} Qt5::Qml)
+target_link_libraries(${PROJECT_NAME} Qt5::Quick)
 target_link_libraries(${PROJECT_NAME} Qt5::Multimedia)
 target_link_libraries(${PROJECT_NAME} "SoundTouchDLL_x64.lib")
+target_link_libraries(${PROJECT_NAME} "dwmapi.lib")
 	
 # set startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build event to MyTest
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
-        "C:/dev/lib/soundtouch_dll-2.1.1/SoundTouchDLL_x64.dll"      # <--this is in-file
+        "D:/dev/lib/soundtouch_dll-2.1.1/SoundTouchDLL_x64.dll"      # <--this is in-file
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 # RUNNUNG WINDEPLOYQT

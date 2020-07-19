@@ -9,6 +9,8 @@
 #include "audiobookmodel.h"
 #include "audiobooklistmodel.h"
 #include "audiobook.h"
+#include "blheader.h"
+#include "blwindow.h"
 
 int main(int argc, char *argv[]) {
 
@@ -22,6 +24,8 @@ int main(int argc, char *argv[]) {
 
     AudioBookList audioBookList("C:/Audiobook");
 
+    qmlRegisterType<BLWindow>("kh.components", 1, 0, "BLWindow");
+    qmlRegisterType<BLHeader>("kh.components", 1, 0, "BLHeader");
     qmlRegisterType<AudioBookModel>("io.qt.examples.audiobookmodel", 1, 0, "AudioBookModel");
     qmlRegisterType<AudioBookListModel>("io.qt.examples.booklistmodel", 1, 0, "BookListModel");
     qmlRegisterSingletonType<BackEnd>("io.qt.examples.backend", 1, 0, "BackEnd", &BackEnd::qmlInstance);

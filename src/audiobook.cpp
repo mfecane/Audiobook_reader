@@ -127,6 +127,7 @@ QString AudioBook::folderName() const {
 
 void AudioBook::requestUpdateSizes() { // move to thread
 
+    return;
     // This shit is very unstable
     for(int i = 0; i < m_data.size(); ++i) {
         QString path = getFilePath(i);
