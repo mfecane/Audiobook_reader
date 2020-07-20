@@ -64,14 +64,14 @@ GridView {
                             name : "hover"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.main_gray
+                                color: Theme.accent
                             }
                         },
                         State {
                             name : "pressed"
                             PropertyChanges {
                                 target: backgroundRect
-                                color: Theme.main_gray
+                                color: Theme.accent
                             }
                         },
                         State {
@@ -89,74 +89,7 @@ GridView {
                 }
             } // Button
         } //Item
-
-//        Rectangle {
-//            implicitHeight: 200
-//            implicitWidth: booksView.width/2
-//            Button {
-//                anchors.margins: 10
-//                anchors.fill: parent
-//                id: wrapper
-
-//                property real progress: model.progress
-
-//                state: (wrapper.down | wrapper.ListView.isCurrentItem) ?
-//                           "pressed" : wrapper.hovered ?
-//                               "hover" : "default"
-//                contentItem: Label {
-//                    leftPadding: 10
-//                    text: model.text
-//                }
-
-//                background:
-//                    Rectangle {
-//                    id:backgroundRect
-//                    color: Theme.background_color
-//                    Rectangle {
-//                        height:4
-//                        color: Theme.button_color
-//                        width: backgroundRect.width * wrapper.progress
-//                        anchors.left: parent.left
-//                        anchors.bottom: parent.bottom
-//                    }
-//                }
-//                states: [
-//                    State {
-//                        name : "hover"
-//                        PropertyChanges {
-//                            target: backgroundRect
-//                            color: Theme.main_gray
-//                        }
-//                    },
-//                    State {
-//                        name : "pressed"
-//                        PropertyChanges {
-//                            target: backgroundRect
-//                            color: Theme.main_gray
-//                        }
-//                    },
-//                    State {
-//                        name : "default"
-//                        PropertyChanges {
-//                            target: backgroundRect
-//                            color: Theme.background_color
-//                        }
-//                    }
-//                ] // states
-//                transitions: Transition {
-//                    ColorAnimation {
-//                        duration: 50
-//                    }
-//                }
-//                onClicked:
-//                {
-//                    booksView.currentIndex = index
-//                    bookListModel.index = index
-//                }
-//            } // Button
-//        } // Rectangle
     } // Component
-
     delegate: bookDelegate
     ScrollBar.vertical: ScrollBar { }
 } // GridView

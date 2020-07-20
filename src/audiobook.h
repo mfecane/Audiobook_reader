@@ -44,7 +44,7 @@ public:
     int sizeTotal();
     void readFileSizes();
     qint64 getCurrentFilePos();
-    void setCurrentFilePos(qint64 pos);
+    void setCurrentFilePos(qint64 pos, qint64 dur);
     void requestUpdateSizes();
     void updateSizes();
 

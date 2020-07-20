@@ -4,6 +4,7 @@
 #include <QMutex>
 #include <QQmlContext>
 #include <QDebug>
+#include <QThread>
 
 #include "backend.h"
 #include "globaljson.h"
@@ -14,8 +15,6 @@ BackEnd* BackEnd::m_instance = nullptr;
 
 BackEnd::BackEnd(QObject *parent) :
     QObject(parent),
-    m_currentPos(0),
-    m_player(this),
     m_settings("Gavitka software", "Audiobook reader"),
     m_audiobook(nullptr)
 {
@@ -23,20 +22,7 @@ BackEnd::BackEnd(QObject *parent) :
         m_tempoValues.append(f);
     }
 
-    QObject::connect (&m_player, SIGNAL(stateChanged(QMediaPlayer::State)),
-                      this, SLOT(isPlayingSlot(QMediaPlayer::State)));
-
-    QObject::connect (&m_player, SIGNAL(positionChanged(int)),
-                      this, SLOT(positionChangedSlot(int)));
-
-    //    QObject::connect (&m_player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)),
-    //                      this, SLOT(mediaStatusSlot(QMediaPlayer::MediaStatus)));
-    // TODO: implement
-
-
-    QObject::connect (&m_player, SIGNAL(onFinished()),
-                      this, SLOT(onFinishedSlot()));
-
+    createPlayer();
 
     GlobalJSON::getInstance()->loadJSON();
 
@@ -64,7 +50,7 @@ BackEnd *BackEnd::getInstance()
 
 bool BackEnd::isPlaying()
 {
-    return m_player.state() == QMediaPlayer::PlayingState;
+    return m_player->state() == QMediaPlayer::PlayingState;
 }
 
 void BackEnd::setupAutosave()
@@ -77,20 +63,15 @@ void BackEnd::setupAutosave()
 
 qreal BackEnd::fileProgress()  // move to player
 {
-    if(m_player.duration() != 0) {
-        qreal r;
-        r = (qreal)m_player.position() / m_player.duration();
-        return r;
-    } else {
-        return 0;
-    }
+    return m_audiobook->progressCurrentFile();
 }
 
 void BackEnd::setFileProgress(qreal value)
 {
-    if(m_player.duration() != 0) {
-        int newpos = m_player.duration() * value;
-        m_player.setPosition(newpos);
+    if(m_currentDuration != 0) {
+        qDebug() << "setFileProgress " << value;
+        int newpos = m_currentDuration * value;
+        emit playerPosition(newpos);
     }
 }
 
@@ -136,7 +117,7 @@ void BackEnd::increaseTempo()
     int index = m_tempo + 1;
     if(index >= m_tempoValues.size()) return;
     m_tempo = index;
-    m_player.setTempo(m_tempoValues.at(m_tempo));
+    emit playerTempo(m_tempoValues[m_tempo]);
     m_settings.setValue("tempo", m_tempo);
     emit tempoChanged();
 }
@@ -146,7 +127,7 @@ void BackEnd::decreaseTempo()
     int index = m_tempo - 1;
     if(index < 0) return;
     m_tempo = index;
-    m_player.setTempo(m_tempoValues.at(m_tempo));
+    emit playerTempo(m_tempoValues[m_tempo]);
     m_settings.setValue("tempo", m_tempo);
     emit tempoChanged();
 }
@@ -170,7 +151,7 @@ void BackEnd::setAudioBook(QString path)
             connect(m_audiobook, &AudioBook::indexChanged, this, &BackEnd::indexChangedSlot);
             emit audioBookChanged();
 
-            updatePlayer();
+            resetPlayer();
         }
         catch(std::exception* e) {
             qDebug() << e->what();
@@ -255,7 +236,9 @@ void BackEnd::autoLoad()
 
 void BackEnd::closeAudioBook()
 {
-    if(isPlaying()) m_player.stop();
+    if(isPlaying())  {
+        emit playerKill();
+    }
 
     delete m_audiobook;
     m_audiobook = nullptr;
@@ -263,18 +246,37 @@ void BackEnd::closeAudioBook()
     emit isPlayingChanged();
 }
 
-void BackEnd::updatePlayer()
-{ // updates player with appropriate file
+
+void BackEnd::createPlayer() {
+    m_thread = new QThread(this);
+    m_player = new Player();
+    m_player->moveToThread(m_thread);
+
+    connect(m_thread, &QThread::finished, m_player, &QObject::deleteLater);
+    connect(this, &BackEnd::playerSetFile, m_player, &Player::setFile);
+    connect(this, &BackEnd::playerPlay, m_player, &Player::play);
+    connect(this, &BackEnd::playerPause, m_player, &Player::pause);
+    connect(this, &BackEnd::playerVolume, m_player, &Player::setVolume);
+    connect(this, &BackEnd::playerTempo, m_player, &Player::setTempo);
+    connect(this, &BackEnd::playerPosition, m_player, &Player::setPosition);
+    connect(this, &BackEnd::playerKill, m_player, &Player::die);
+    connect(this, &BackEnd::playerJump, m_player, &Player::jump);
+    connect(m_player, &Player::stateChanged, this, &BackEnd::playerStateChanged);
+    connect(m_player, &Player::positionChanged, this, &BackEnd::positionChangedSlot);
+    connect(m_player, &Player::finished, this, &BackEnd::onFinishedSlot);
+
+    m_thread->start();
+}
+
+
+void BackEnd::resetPlayer()
+{
     if(m_audiobook != nullptr && m_audiobook->size() > 0) {
         QString path = m_audiobook->getCurrentFilePath();
+        int pos = m_audiobook->getCurrentFilePos();
         if(QFile(path).exists()) {
-            if(isPlaying()) m_player.stop();
-            emit isPlayingChanged();
-
-            m_player.setFile(path);
-            int pos = m_audiobook->getCurrentFilePos();
-            m_player.setPosition(pos);
-            m_player.setVolume(25);
+            emit playerSetFile(path);
+            emit playerPosition(pos);
         }
     }
 }
@@ -298,51 +300,59 @@ AudioBook *BackEnd::audioBook()
 
 void BackEnd::play()
 {
-    m_player.play();
+    emit playerPlay();
 }
 
 void BackEnd::stop()
 {
-    m_player.pause();
-    emit isPlayingChanged();
+    emit playerPause();
 }
 
 void BackEnd::next()
 {
     m_audiobook->setNext();
-    updatePlayer();
-    play();
+    resetPlayer();
+    emit playerPlay();
 }
 
 void BackEnd::prev()
 {
     m_audiobook->setPrevious();
-    updatePlayer();
-    play();
+    resetPlayer();
+    emit playerPlay();
 }
 
-void BackEnd::jumpForeward(int sec)
+void BackEnd::jumpfwd()
 {
-    m_player.jump(sec * 1000);
-    // TODO: Try to get this to work
-    //    while (m_player.jump(10000) != 0) {
-    //        if(m_audiobook->setNext() == false) break;
-    //    }
+    emit playerJump(Player::Jump::fwd);
 }
 
-void BackEnd::jumpBack(int sec)
+void BackEnd::jumpfwdx2()
 {
-    m_player.jump(-sec * 1000);
+    emit playerJump(Player::Jump::fwdx2);
+}
+
+void BackEnd::jumpback()
+{
+    emit playerJump(Player::Jump::back);
+}
+
+void BackEnd::jumpbackx2()
+{
+    emit playerJump(Player::Jump::backx2);
 }
 
 void BackEnd::indexChangedSlot()
 {
-    updatePlayer();
+    resetPlayer();
+    emit playerPlay();
 }
 
-void BackEnd::positionChangedSlot(int pos)
+void BackEnd::positionChangedSlot(int pos, int dur)
 {
-    Q_UNUSED(pos)
+    m_currentPosition = pos;
+    m_currentDuration = dur;
+    m_audiobook->setCurrentFilePos(m_currentPosition, m_currentDuration);
     emit fileProgressChanged();
 }
 
@@ -355,8 +365,8 @@ void BackEnd::isPlayingSlot(QMediaPlayer::State state)
 void BackEnd::autoSave()
 {
     if(m_audiobook != nullptr && m_audiobook->size() > 0) {
-        if(m_player.position() > 0) {
-            m_audiobook->setCurrentFilePos(m_player.position());
+        if(m_currentPosition > 0) {
+            m_audiobook->setCurrentFilePos(m_currentPosition, m_currentDuration); // TODO: This is cis straight white man
         }
         m_audiobook->writeJson();
     }
@@ -367,9 +377,15 @@ void BackEnd::autoSave()
 void BackEnd::onFinishedSlot()
 {
     m_audiobook->setNext();
-    updatePlayer();
-    play();
+    resetPlayer();
+    emit playerPlay();
     emit isPlayingChanged();
+}
+
+void BackEnd::playerStateChangedSlot(QMediaPlayer::State state)
+{
+    m_playerstate = state;
+    emit playerStateChanged();
 }
 
 void BackEnd::readCurrentJson(QString &savedFolder, int &savedIndex)

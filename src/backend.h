@@ -24,7 +24,7 @@ class BackEnd : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY isPlayingChanged)
+    Q_PROPERTY(bool isPlaying READ isPlaying NOTIFY playerStateChanged)
     Q_PROPERTY(qreal fileProgress READ fileProgress WRITE setFileProgress NOTIFY fileProgressChanged)
     Q_PROPERTY(qreal bookProgress READ bookProgress NOTIFY fileProgressChanged)
 
@@ -88,6 +88,17 @@ signals:
     void tempoChanged();
     void volumeChanged();
     void audioBookChanged();
+    void playerStateChanged();
+
+    void playerPlay();
+    void playerPause();
+    void playerKill();
+
+    void playerVolume(qreal volume);
+    void playerTempo(qreal tempo);
+    void playerPosition(int pos);
+    void playerJump(Player::Jump jump);
+    void playerSetFile(QString filename);
 
 public slots:
 
@@ -97,19 +108,22 @@ public slots:
     void stop();
     void next();
     void prev();
-    void jumpForeward(int sec);
-    void jumpBack(int sec);
+    void jumpfwd();
+    void jumpfwdx2();
+    void jumpback();
+    void jumpbackx2();
     void increaseTempo();
     void decreaseTempo();
 
 // </UI_COMMANDS>
 
     void indexChangedSlot();
-    void positionChangedSlot(int pos);
+    void positionChangedSlot(int pos, int dur);
     void isPlayingSlot(QMediaPlayer::State state);
     void autoSave();
     void autoLoad();
     void onFinishedSlot();
+    void playerStateChangedSlot(QMediaPlayer::State state);
 
 private:
     
@@ -118,21 +132,23 @@ private:
     void writeCurrentJson();
     void readCurrentJson(QString &savedFolder, int &savedIndex);
     void setupAutosave();
-    void updatePlayer();
     void closeAudioBook();
     QString formatTime(int msec);
+    void createPlayer();
+    void resetPlayer();
 
     static BackEnd* m_instance;
 
-    qint64 m_currentPos;
-    Player m_player;
-    QTimer* m_autoSaveTimer;
+    qint64 m_currentPosition = 0;
+    qint64 m_currentDuration = 0;
+    Player* m_player = nullptr;
+    QThread* m_thread = nullptr;
+    QTimer* m_autoSaveTimer = nullptr;
     QSettings m_settings;
     QJsonObject m_jsonRoot;
     QString m_jsonFileName = "save.json";
     QMutex muxJson;
     QString m_rootPath;
-    int m_currentBookFile;
     QVector<qreal> m_tempoValues;
 
     qreal m_volume;
@@ -141,4 +157,5 @@ private:
     QQmlApplicationEngine* m_engine = nullptr;
     AudioBookList* m_audioBookList = nullptr;
     AudioBook* m_audiobook = nullptr;
+    QMediaPlayer::State m_playerstate;
 };

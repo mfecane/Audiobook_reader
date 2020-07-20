@@ -126,9 +126,6 @@ QString AudioBook::folderName() const {
 }
 
 void AudioBook::requestUpdateSizes() { // move to thread
-
-    return;
-    // This shit is very unstable
     for(int i = 0; i < m_data.size(); ++i) {
         QString path = getFilePath(i);
         QThread* thr = new QThread();
@@ -180,8 +177,9 @@ qint64 AudioBook::getCurrentFilePos() {
     return m_currentFilePos;
 }
 
-void AudioBook::setCurrentFilePos(qint64 pos) {
+void AudioBook::setCurrentFilePos(qint64 pos, qint64 dur) {
     m_currentFilePos = pos;
+    m_sizeCurrentFile = dur;
 }
 
 qreal AudioBook::progressOf(int i)

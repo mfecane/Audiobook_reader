@@ -1,7 +1,8 @@
-#include "player.h"
-
 #include <QAudioDeviceInfo>
+#include <QAudioDecoder>
 #include <QFile>
+
+#include "player.h"
 
 Player::Player(QObject *parent) : QIODevice(parent),
     handle(nullptr),
@@ -21,15 +22,15 @@ Player::Player(QObject *parent) : QIODevice(parent),
     m_tempo = 1.0f;
     m_jumpamount = m_format.sampleRate() * m_format.sampleSize() / 8 * 20;
 
-    connect(m_decoder, SIGNAL(bufferReady()), this, SLOT(bufferReady()));
-    connect(m_decoder, SIGNAL(finished()), this, SLOT(decodingFinished()));
-    connect(m_decoder, SIGNAL(error(QAudioDecoder::Error)), this, SLOT(onError(QAudioDecoder::Error)));
-    connect(&m_timer, SIGNAL(timeout()), this, SLOT(checkSmallBuffer()));
+    connect(m_decoder, &QAudioDecoder::bufferReady, this, &Player::bufferReady);
+    connect(m_decoder, &QAudioDecoder::finished, this, &Player::decodingFinished);
+    connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), this, &Player::onError);
+    connect(&m_timer, &QTimer::timeout, this, &Player::checkSmallBuffer);
 
     m_state = QMediaPlayer::State::StoppedState;
 
     m_timer.setInterval(1000);
-    connect(&m_timer,SIGNAL(timeout()),this,SLOT(timeout())); // position timer
+    connect(&m_timer, &QTimer::timeout, this, &Player::timeout);
 
     m_audio = new QAudioOutput(m_format, this);
 }
@@ -45,13 +46,11 @@ Player::~Player() {
 }
 
 void Player::start() {
-    qDebug() << "player starting";
-
     if(m_state == QMediaPlayer::State::StoppedState) {
 
         if(!m_filename.isEmpty()) {
 
-            connect(m_audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+            connect(m_audio, &QAudioOutput::stateChanged, this, &Player::handleStateChanged);
             m_timer.start();
 
             m_audio->start(this);
@@ -93,7 +92,7 @@ void Player::stop() {
         //close();
         m_state = QMediaPlayer::State::StoppedState;
         emit stateChanged(m_state);
-        emit positionChanged(position());
+        emit positionChanged(position(), duration());
     }
 }
 
@@ -105,44 +104,34 @@ void Player::pause() {
     }
 }
 
-int Player::back(){
-    if((m_bytepos - m_jumpamount) > 0) {
-        m_bytepos -= m_jumpamount;
-        return 0;
-    } else {
-        return m_bytepos - m_jumpamount;
+void Player::jump(Player::Jump jump) {
+    int msec;
+    switch(jump) {
+        case fwd:
+            msec = 5000;
+        break;
+        case fwdx2:
+            msec = 60 * 1000;
+        break;
+        case back:
+            msec = - 5000;
+        break;
+        case backx2:
+            msec = - 60 * 1000;
+        break;
     }
-}
-
-int Player::fwd(){
-    if(m_data.size() > (m_bytepos + m_jumpamount)) { //check if available
-        m_bytepos += m_jumpamount;
-        return 0;
-    } else  {
-        return (m_bytepos + m_jumpamount) - m_data.size();
-    }
-}
-
-int Player::jump(int msec) {
     int pos = position();
     int dur = duration();
 
     if(msec > 0  && pos + msec < dur) {
         setPosition(pos + msec);
-        return 0;
-    } else {
-        if(isDecodingFinished) {
-            return pos + msec - dur;
-        }
+        return;
     }
     int a = -msec;
     if(msec < 0 && pos - a > 0) {
         setPosition(pos - a);
-        return  0;
-    } else {
-        return pos - a;
+        return;
     }
-    return  0;
 }
 
 void Player::setVolume(qreal value) {
@@ -204,7 +193,7 @@ qint64 Player::readData(char *data, qint64 maxlen) {
     if(maxlen > 0) {
         if (atEnd()) {
             stop();
-            emit onFinished();
+            emit finished();
             return -1;
         }
         checkSmallBuffer();
@@ -265,6 +254,11 @@ qint64 Player::writeData(const char *data, qint64 len) { // delete
     return 0;
 }
 
+void Player::die()
+{
+    throw std::logic_error("Not implemented");
+}
+
 bool Player::atEnd() const {
     return m_outBuffer.size()
             && m_outBuffer.atEnd()
@@ -311,7 +305,6 @@ void Player::onError(QAudioDecoder::Error err) { // SLOT
     }
 }
 
-
 void Player::bufferReady() { // SLOT
     const QAudioBuffer &buffer = m_decoder->read();
     const int length = buffer.byteCount();
@@ -328,7 +321,7 @@ void Player::decodingFinished() { // SLOT
 }
 
 void Player::timeout() {
-    emit positionChanged(position());
+    emit positionChanged(position(), duration());
 }
 
 void Player::handleStateChanged(QAudio::State state) {

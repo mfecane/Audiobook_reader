@@ -19,7 +19,7 @@ Button {
                     target: color_effect
                     enabled: true
                 }
-        }
+        } // Rectangle
 
     contentItem:
         Item {

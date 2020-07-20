@@ -8,6 +8,7 @@
 #include <QMediaPlayer>
 #include <QAudioOutput>
 #include <QFile>
+#include <QThread>
 
 #include "SoundTouchDLL.h"
 
@@ -22,15 +23,19 @@ Q_OBJECT
 
 public:
 
+    enum Jump {
+        back = 0,
+        backx2,
+        fwd,
+        fwdx2
+    };
+
     Player(QObject *parent = nullptr);
     ~Player() override;
 
     void start();
     bool atEnd() const override;
 
-    void setTempo(float t);
-    int back();
-    int fwd();
     int position();
     int duration();
 
@@ -43,20 +48,24 @@ public:
     QMediaPlayer::State state();
 
     void play();
-    int jump(int msec);
-
-    void setVolume(qreal value);
 
 signals:
 
-    void onFinished();
-    void positionChanged(int pos);
+    void positionChanged(int pos, int dur);
     void stateChanged(QMediaPlayer::State);
+    void finished();
 
 protected:
 
     qint64 readData(char* data, qint64 maxlen) override;
     qint64 writeData(const char* data, qint64 len) override;
+
+public slots:
+
+    void setVolume(qreal value);
+    void setTempo(float t);
+    void die();
+    void jump(Jump jump);
 
 private slots:
 

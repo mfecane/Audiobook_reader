@@ -62,7 +62,6 @@ Rectangle {
             clip:true
             state: "stateright"
 
-
             Label {
                 id: titleLabel
                 Layout.alignment: Qt.AlignHCenter
@@ -146,19 +145,19 @@ Rectangle {
             Layout.alignment: Qt.AlignCenter
             ImageButton {
                 src: "qrc:/images/jmp_back_x2.png"
-                onClicked: BackEnd.jumpBack(60)
+                onClicked: BackEnd.jumpbackx2()
             }
             ImageButton {
                 src: "qrc:/images/jmp_back.png"
-                onClicked: BackEnd.jumpBack(10)
+                onClicked: BackEnd.jumpback()
             }
             ImageButton {
                 src: "qrc:/images/jmp_fwd.png"
-                onClicked: BackEnd.jumpForeward(10)
+                onClicked: BackEnd.jumpfwd()
             }
             ImageButton {
                 src: "qrc:/images/jmp_fwd_x2.png"
-                onClicked: BackEnd.jumpForeward(60)
+                onClicked: BackEnd.jumpfwdx2()
             }
         }
         RowLayout {
@@ -192,6 +191,7 @@ Rectangle {
         } // RowLayout
 
         ProgressBar {
+            id: fileProgressBar
             from: 0.0
             to: 1.0
             value: BackEnd.fileProgress
@@ -200,19 +200,13 @@ Rectangle {
             Layout.bottomMargin: 20
             Layout.rightMargin: 20
             Layout.leftMargin: 20
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                        var pos = mapToItem(fileProgressBar, mouse.x, mouse.y)
+                        BackEnd.fileProgress = pos.x / fileProgressBar.width
+                    }
+            }
         }
     } // ColumnLayout
-//    Button {
-//        anchors.left: parent.left
-//        anchors.verticalCenter: parent.verticalCenter
-//        anchors.verticalCenterOffset: 50
-//        contentItem:
-//            Image {
-//            anchors.left: parent.left
-//            anchors.verticalCenter: parent.verticalCenter
-//            id: tabimg
-//            source: "qrc:/images/tab_button.png"
-//        }
-//        background :Item{}
-//    }
 } // Rectangle

@@ -25,6 +25,8 @@ private:
     LRESULT hit_test(POINT cursor) const;
     void set_shadow(bool enabled);
     bool composition_enabled();
+    bool maximized(HWND hwnd);
+    void adjust_maximized_client_rect(HWND window, RECT &rect);
 
     static constexpr DWORD aero_borderless  = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
     HWND m_hwnd;
