@@ -52,10 +52,8 @@ BLWindow::BLWindow(QWindow *parent) :
     QQuickWindow(parent)
 {
     setFlags(Qt::FramelessWindowHint);
-    m_hwnd = reinterpret_cast<HWND>(winId());
-    setStyle();
+    set_borderless(true);
 
-    //connect(this, &BLWindow::beforeRendering, this, &BLWindow::setStyle);
 }
 
 bool BLWindow::nativeEvent(const QByteArray &eventType, void *message, long *result)
@@ -221,69 +219,22 @@ bool BLWindow::nativeEvent(const QByteArray &eventType, void *message, long *res
             }
         }
 
-    // But whaa??  default: QQuickWindow::nativeEvent(eventType, message, result);
+    default: QQuickWindow::nativeEvent(eventType, message, result);
     } // switch
 
     return QQuickWindow::nativeEvent(eventType, message, result);
 }
 
-void BLWindow::setStyle()
+auto BLWindow::set_borderless(bool enabled) const -> void
 {
-    ::SetWindowLongPtrW(m_hwnd, GWL_STYLE, static_cast<LONG>(aero_borderless));
-    set_shadow(true);
-    ::SetWindowPos(reinterpret_cast<HWND>(winId()), nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
-}
+    auto new_style = (enabled) ? select_borderless_style() : Style::windowed;
+    auto old_style = static_cast<Style>(::GetWindowLongPtrW(reinterpret_cast<HWND>(winId()), GWL_STYLE));
 
-LRESULT BLWindow::hit_test(POINT cursor) const
-{
-    const POINT border{
-        ::GetSystemMetrics(SM_CXFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER),
-        ::GetSystemMetrics(SM_CYFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER)
-    };
-    RECT window;
-    if (!::GetWindowRect(m_hwnd, &window)) {
-        return HTNOWHERE;
-    }
+    if (new_style != old_style) {
+        ::SetWindowLongPtrW(reinterpret_cast<HWND>(winId()), GWL_STYLE, static_cast<LONG>(new_style));
 
-    enum region_mask {
-        client = 0b0000,
-        left   = 0b0001,
-        right  = 0b0010,
-        top    = 0b0100,
-        bottom = 0b1000,
-    };
-
-    const auto result =
-        left    * (cursor.x <  (window.left   + border.x)) |
-        right   * (cursor.x >= (window.right  - border.x)) |
-        top     * (cursor.y <  (window.top    + border.y)) |
-        bottom  * (cursor.y >= (window.bottom - border.y));
-
-    switch (result) {
-        case left          : return HTLEFT;
-        case right         : return HTRIGHT;
-        case top           : return HTTOP;
-        case bottom        : return HTBOTTOM;
-        case top | left    : return HTTOPLEFT;
-        case top | right   : return HTTOPRIGHT;
-        case bottom | left : return HTBOTTOMLEFT;
-        case bottom | right: return HTBOTTOMRIGHT;
-        case client        : return HTCLIENT; // HTCAPTION
-        default            : return HTNOWHERE;
+        // redraw frame
+        ::SetWindowPos(reinterpret_cast<HWND>(winId()), nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
     }
 }
 
-void BLWindow::set_shadow(bool enabled)
-{
-    if (composition_enabled()) {
-        static const MARGINS shadow_state[2]{ { 0,0,0,0 },{ 1,1,1,1 } };
-        ::DwmExtendFrameIntoClientArea(m_hwnd, &shadow_state[enabled]);
-    }
-}
-
-bool BLWindow::composition_enabled()
-{
-    BOOL composition_enabled = FALSE;
-    bool success = ::DwmIsCompositionEnabled(&composition_enabled) == S_OK;
-    return composition_enabled && success;
-}

@@ -10,23 +10,14 @@ class BLWindow : public QQuickWindow
     Q_OBJECT
 
 public:
-
     explicit BLWindow(QWindow *parent = nullptr);
 
 protected:
-
     bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
 
 signals:
 
 private:
-
-    void setStyle();
-    LRESULT hit_test(POINT cursor) const;
-    void set_shadow(bool enabled);
-    bool composition_enabled();
-
-    static constexpr DWORD aero_borderless  = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
-    HWND m_hwnd;
+    auto set_borderless(bool enabled) const -> void;
 };
 

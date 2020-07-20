@@ -20,8 +20,6 @@ BLWindow {
     minimumWidth: 300
     minimumHeight: 640
     title: qsTr("Audiobook Reader")
-    flags: Qt.Window |
-           Qt.FramelessWindowHint
 
     Settings {
         property alias x: window.x
