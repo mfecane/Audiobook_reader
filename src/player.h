@@ -75,6 +75,7 @@ private slots:
     void checkSmallBuffer();
     void timeout();
     void handleStateChanged(QAudio::State state);
+    void durationChangedSlot(qint64 dur);
 
 private:
 
@@ -82,22 +83,27 @@ private:
     void clear();
     void clearSoundtouch();
     void initSoundtouch();
+    qint64 bytes_per_msec(int msec);
 
     QAudioOutput* m_audio;
     QByteArray m_data;
     QByteArray m_smallbuffer;
     QAudioDecoder* m_decoder;
     QAudioFormat m_format;
-    HANDLE handle;
+    HANDLE handle = nullptr;
     QBuffer m_outBuffer;
     QBuffer m_inBuffer;
     int m_bytepos;
+    qint64 m_pos;
     QMutex m_mux;
     QTimer m_timer;
     float m_tempo;
-    int m_jumpamount;
     QMediaPlayer::State m_state;
     QString m_filename;
+
+    qint64 m_position;
+    qint64 m_duration;
+
 
     bool isDecodingFinished;
     int m_afterDecodingPos = 0;

@@ -2,30 +2,48 @@
 
 #include "filesizerequest.h"
 
-FileSizeRequest::FileSizeRequest(int i, QString path, QObject *parent) :
-    QObject(parent)
+FileSizeRequest::FileSizeRequest(AudioBook *audiobook)
 {
-    m_index = i;
-    m_path = path;
+    m_audiobook = audiobook;
 }
 
 void FileSizeRequest::process()
 {
-    m_player = new QMediaPlayer(this);
-    m_player->setMedia(QUrl::fromLocalFile(m_path));
-    connect(m_player, SIGNAL(metaDataAvailableChanged(bool)),
-                    this, SLOT(metaDataChangedSlot(bool)));
+    if(m_audiobook->size() > 0) {
+        m_index = 0;
+        resetDecoder();
+    }
 }
 
-void FileSizeRequest::metaDataChangedSlot(bool v)
+void FileSizeRequest::durationChangedSlot(qint64 dur)
 {
-    //qDebug() << "metaDataChangedSlot index " << m_index;
-    //qDebug() << "path " << m_path;
-    if(v) {
-        qint64 size = m_player->metaData(QMediaMetaData::Duration).toInt();
-        if(size > 0) {
-            emit metaDataChanged(m_index, size);
-        }
-    };
-    emit finished();
+    // Handle audiobook changed
+    clearDecoder();
+    if(dur > 0) {
+        m_audiobook->setSize(m_index, dur);
+    }
+    ++m_index;
+    if(m_index >= m_audiobook->size()) {
+        emit finished();
+        return;
+    }
+    resetDecoder();
+}
+
+void FileSizeRequest::resetDecoder()
+{
+    QDir d;
+    m_decoder = new QAudioDecoder(this);
+    QString filename = m_audiobook->filePathAt(m_index);
+    m_decoder->setSourceFilename(filename);
+    connect(m_decoder, &QAudioDecoder::durationChanged, this, &FileSizeRequest::durationChangedSlot);
+}
+
+void FileSizeRequest::clearDecoder()
+{
+    if(m_decoder != nullptr) {
+        m_decoder->stop();
+        delete m_decoder;
+        m_decoder = nullptr;
+    }
 }

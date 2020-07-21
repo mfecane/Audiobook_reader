@@ -48,9 +48,12 @@ public:
     void requestUpdateSizes();
     void updateSizes();
 
+    void setSize(int index, qint64 value);
+    QString filePathAt(int i);
+
 public slots:
 
-    void requestResult(int index, qint64 size);
+    void sizeReadySlot();
 
 signals:
 
@@ -58,14 +61,14 @@ signals:
 
 private:
 
-    QString getFilePath(int i);
 
     QString m_name;
     QString m_path;
 
-    QVector<AudioBookFile> m_data;
+    QVector<AudioBookFile>* m_data;
 
     bool sizeReady = false;
+    QThread* m_thread;
 };
 
 

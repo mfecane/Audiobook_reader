@@ -4,29 +4,32 @@
 #include <QMediaPlayer>
 #include <QMediaMetaData>
 #include <QThread>
+#include <QAudioDecoder>
+#include "audiobook.h"
 
 class FileSizeRequest : public QObject
 {
     Q_OBJECT
 
 public:
-    FileSizeRequest(int i, QString path, QObject *parent = nullptr);
+
+    FileSizeRequest(AudioBook* audiobook);
 
 signals:
 
-    void metaDataChanged(int index, qint64 size);
     void finished();
 
 public slots:
 
     void process();
-    void metaDataChangedSlot(bool v);
+    void durationChangedSlot(qint64 dur);
 
 private:
 
-    int m_index;
-    int size;
-    QString m_path;
-    QMediaPlayer* m_player;
+    void resetDecoder();
+    void clearDecoder();
 
+    int m_index = 0;
+    QAudioDecoder* m_decoder = nullptr;
+    AudioBook* m_audiobook;
 };

@@ -14,6 +14,7 @@
 
 #include "audiobooklist.h"
 #include "player.h"
+#include "player2.h"
 
 class BookFile;
 class AudioBook;
@@ -158,4 +159,6 @@ private:
     AudioBookList* m_audioBookList = nullptr;
     AudioBook* m_audiobook = nullptr;
     QMediaPlayer::State m_playerstate;
+
+    Player2* m_player2;
 };

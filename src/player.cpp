@@ -4,10 +4,11 @@
 
 #include "player.h"
 
-Player::Player(QObject *parent) : QIODevice(parent),
-    handle(nullptr),
+Player::Player(QObject *parent) :
+    QIODevice(parent),
     m_outBuffer(&m_data),
-    m_inBuffer(&m_data)
+    m_inBuffer(&m_data),
+    m_timer(this)
 {
     QAudioDeviceInfo device = QAudioDeviceInfo::defaultOutputDevice();
     m_format = device.preferredFormat();
@@ -20,11 +21,11 @@ Player::Player(QObject *parent) : QIODevice(parent),
     setOpenMode(QIODevice::ReadOnly);
 
     m_tempo = 1.0f;
-    m_jumpamount = m_format.sampleRate() * m_format.sampleSize() / 8 * 20;
 
     connect(m_decoder, &QAudioDecoder::bufferReady, this, &Player::bufferReady);
     connect(m_decoder, &QAudioDecoder::finished, this, &Player::decodingFinished);
     connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), this, &Player::onError);
+    connect(m_decoder, &QAudioDecoder::durationChanged, this, &Player::durationChangedSlot);
     connect(&m_timer, &QTimer::timeout, this, &Player::checkSmallBuffer);
 
     m_state = QMediaPlayer::State::StoppedState;
@@ -148,9 +149,7 @@ int Player::position() {
 
 bool Player::setPosition(int newpos) {
     if(newpos >= 0 && newpos < m_data.size()) {
-        m_bytepos = newpos * (m_format.sampleRate() / 1000)
-                * (m_format.sampleSize() / 8)
-                * m_format.channelCount();
+        m_bytepos = bytes_per_msec(newpos);
         return true;
     } else if(!isDecodingFinished) {
         m_afterDecodingPos = newpos;
@@ -198,7 +197,9 @@ qint64 Player::readData(char *data, qint64 maxlen) {
         }
         checkSmallBuffer();
         int readlen = qMin( (int)maxlen, m_smallbuffer.size());
+        // We read from smallbuffer but not more than maxlen
         memset(data, 0, maxlen);
+        // Write zero to data
         QBuffer buff(&m_smallbuffer);
         buff.open(QIODevice::ReadOnly);
         buff.read(data, readlen);
@@ -214,6 +215,13 @@ void Player::initSoundtouch() {
     soundtouch_setTempo(handle, m_tempo);
     soundtouch_setSampleRate(handle, m_format.sampleRate());
     soundtouch_setChannels(handle, m_format.channelCount());
+}
+
+qint64 Player::bytes_per_msec(int msec)
+{
+    return (m_format.sampleRate() / 1000)
+            * (m_format.sampleSize() / 8)
+            * m_format.channelCount() * msec;
 }
 
 void Player::clearSoundtouch() {
@@ -236,12 +244,13 @@ QMediaPlayer::State Player::state() {
 }
 
 void Player::checkSmallBuffer() {
-
+// smallbuffer is a moving frame we read from file and send to audio device
+// also data in smallbuffer is modified by soundtouch
     if(m_smallbuffer.size() < SMALLBUFF_SIZE) { // if smallbuffer is not full
         m_mux.lock();
         m_outBuffer.seek(m_bytepos);
-        int bytesneeded = qMin(SMALLBUFF_SIZE - m_smallbuffer.size(),
-                               m_data.size() - m_bytepos);
+        int bytesneeded = qMin(SMALLBUFF_SIZE - m_smallbuffer.size(), // bytes to fill smallbuffer
+                               m_data.size() - m_bytepos); // bytes until the end
         m_smallbuffer.append(soundTouch(m_outBuffer.read(bytesneeded)));
         m_bytepos += bytesneeded;
         m_mux.unlock();
@@ -256,7 +265,8 @@ qint64 Player::writeData(const char *data, qint64 len) { // delete
 
 void Player::die()
 {
-    throw std::logic_error("Not implemented");
+    stop();
+    //throw std::logic_error("Not implemented");
 }
 
 bool Player::atEnd() const {
@@ -307,9 +317,14 @@ void Player::onError(QAudioDecoder::Error err) { // SLOT
 
 void Player::bufferReady() { // SLOT
     const QAudioBuffer &buffer = m_decoder->read();
-    const int length = buffer.byteCount();
+    int length = buffer.byteCount();
     const char *data = buffer.constData<char>();
-    m_inBuffer.write(data, length);
+    //qint64 decoder_pos = m_decoder->position();
+    // only add to data last 60 seconds of file
+    //if(decoder_pos < m_position - 60 * 1000) {
+        m_inBuffer.write(data, length);
+    //}
+    // else ignore data
 }
 
 void Player::decodingFinished() { // SLOT
@@ -326,14 +341,19 @@ void Player::timeout() {
 
 void Player::handleStateChanged(QAudio::State state) {
     switch (state) {
-    case QAudio::IdleState:
-        break;
+        case QAudio::IdleState:
+            break;
 
-    case QAudio::StoppedState:
-        if (m_audio->error() != QAudio::NoError) {
-            qDebug() << "Audio error" << m_audio->error();
-        }
-        stop();
-        break;
+        case QAudio::StoppedState:
+            if (m_audio->error() != QAudio::NoError) {
+                qDebug() << "Audio error" << m_audio->error();
+            }
+            stop();
+            break;
     }
+}
+
+void Player::durationChangedSlot(qint64 dur)
+{
+    m_duration = dur;
 }

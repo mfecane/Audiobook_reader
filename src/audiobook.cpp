@@ -22,12 +22,13 @@ AudioBook::AudioBook(QString path, QObject *parent) :
     filters << "*.mp3";
     d.setNameFilters(filters);
     QFileInfoList list = d.entryInfoList();
+    m_data = new QVector<AudioBookFile>();
     for(int i = 0; i < list.size(); ++i) {
         const QFileInfo &fi = list.at(i);
         QString sname = fi.fileName();
         AudioBookFile abf;
         abf.name = sname;
-        m_data.append(abf);
+        m_data->append(abf);
     }
     emit indexChanged();
     readJson();
@@ -35,7 +36,7 @@ AudioBook::AudioBook(QString path, QObject *parent) :
 }
 
 int AudioBook::size() {
-    return m_data.size();
+    return m_data->size();
 }
 
 int AudioBook::index()
@@ -65,7 +66,7 @@ bool AudioBook::setIndex(int i) {
     if(m_index == i) {
         return false;
     }
-    if(i >=0 && i < m_data.size()) {
+    if(i >=0 && i < m_data->size()) {
         m_index = i;
         updateSizes();
         emit indexChanged();
@@ -75,15 +76,15 @@ bool AudioBook::setIndex(int i) {
 }
 
 QString AudioBook::getCurrentFilePath() {
-    return getFilePath(m_index);
+    return filePathAt(m_index);
 }
 
 const AudioBookFile &AudioBook::fileAt(int i){
-    if(i < 0 || i >= m_data.size()) {
+    if(i < 0 || i >= m_data->size()) {
         qDebug() << "index overflow" << i;
-        return m_data.at(0);
+        return m_data->at(0);
     }
-    return m_data.at(i);
+    return m_data->at(i);
 }
 
 const AudioBookFile &AudioBook::current()
@@ -91,7 +92,8 @@ const AudioBookFile &AudioBook::current()
     return fileAt(m_index);
 }
 
-QString AudioBook::getFilePath(int i) {
+QString AudioBook::filePathAt(int i)
+{
     QDir d;
     QString path = m_path + d.separator() + fileAt(i).name;
     QFile f(path);
@@ -103,7 +105,7 @@ QString AudioBook::getFilePath(int i) {
 }
 
 bool AudioBook::setNext() {
-    if(m_index >= m_data.size()) return false;
+    if(m_index >= m_data->size()) return false;
     ++m_index;
     emit indexChanged();
     return true;
@@ -126,27 +128,23 @@ QString AudioBook::folderName() const {
 }
 
 void AudioBook::requestUpdateSizes() { // move to thread
-    for(int i = 0; i < m_data.size(); ++i) {
-        QString path = getFilePath(i);
-        QThread* thr = new QThread();
-        FileSizeRequest *fsr = new FileSizeRequest(i, path);
-        fsr->moveToThread(thr);
-        //TODO: error handling
-        //connect(fsr, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
-        connect(thr, SIGNAL(started()), fsr, SLOT(process()));
-        connect(fsr, SIGNAL(finished()), thr, SLOT(quit()));
-        connect(fsr, SIGNAL(finished()), fsr, SLOT(deleteLater()));
-        connect(thr, SIGNAL(finished()), thr, SLOT(deleteLater()));
-        connect(fsr, SIGNAL(metaDataChanged(int, qint64)),
-                this, SLOT(requestResult(int, qint64)));
-        thr->start();
-    }
+    m_thread = new QThread();
+    FileSizeRequest *fsr = new FileSizeRequest(this);
+    fsr->moveToThread(m_thread);
+    //TODO: error handling
+    connect(fsr, SIGNAL(finished()), fsr, SLOT(deleteLater()));
+    connect(m_thread, &QThread::started, fsr, &FileSizeRequest::process);
+    connect(fsr, &FileSizeRequest::finished, m_thread, &QThread::quit);
+    connect(m_thread, &QThread::finished, m_thread, &QThread::deleteLater);
+    connect(fsr, &FileSizeRequest::finished, m_thread, &QThread::deleteLater);
+    connect(fsr, &FileSizeRequest::finished, this, &AudioBook::sizeReadySlot);
+    m_thread->start();
 }
 
 void AudioBook::updateSizes() { // when ready
     if(sizeReady == true) {
         int res = 0;
-        for(int i = 0; i < m_data.size(); ++i) {
+        for(int i = 0; i < m_data->size(); ++i) {
             if(i == m_index)
             {
                 m_sizeBefore = res;
@@ -158,19 +156,11 @@ void AudioBook::updateSizes() { // when ready
     }
 }
 
-void AudioBook::requestResult(int index, qint64 vsize)
+void AudioBook::sizeReadySlot()
 {
-    m_data[index].size = vsize;
-    bool flag = true;
-    for(int i = 0; i < m_data.size(); ++i) {
-        if(m_data.at(i).size <= 0) flag = false;
-    }
-    if(flag)
-    {
-        qDebug() << "All sizes ready";
-        sizeReady = true;
-        updateSizes();
-    }
+    sizeReady = true;
+    updateSizes();
+    qDebug() << "sizeReady";
 }
 
 qint64 AudioBook::getCurrentFilePos() {
@@ -203,4 +193,9 @@ int AudioBook::progressInt() {
 
 int AudioBook::sizeTotal() {
     return m_sizeTotal;
+}
+
+void AudioBook::setSize(int index, qint64 value)
+{
+    (*m_data)[index].size = value;
 }

@@ -56,6 +56,9 @@ add_executable(${PROJECT_NAME} WIN32
     src/player.cpp
     src/blwindow.h
     src/blwindow.cpp
+    src/player2.h
+    src/player2.cpp
+
     README.md
     installer/installer.nsi
 
