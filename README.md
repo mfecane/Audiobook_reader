@@ -1,8 +1,14 @@
-Audiobook player
+## Audiobook player
 
-Features:
-- [x] save state
-- [x] increase/decrease tempo
+Trying to create nice looking and convenient audiobook player.
 
-TODO:
-- [x] Graphics
+## Features:
+
+- [ ] save state
+- [ ] increase/decrease tempo
+- [ ] jump forward/backward
+
+## TODO:
+
+- [ ] Fix
+- [ ] Switch from QAudioDecoder to ffmpeg

@@ -91,15 +91,15 @@ signals:
     void audioBookChanged();
     void playerStateChanged();
 
-    void playerPlay();
-    void playerPause();
-    void playerKill();
-
     void playerVolume(qreal volume);
     void playerTempo(qreal tempo);
     void playerPosition(int pos);
     void playerJump(Player::Jump jump);
     void playerSetFile(QString filename);
+
+    void playerPlay();
+    void playerPause();
+    void playerKill();
 
 public slots:
 
@@ -135,14 +135,18 @@ private:
     void setupAutosave();
     void closeAudioBook();
     QString formatTime(int msec);
+
+
     void createPlayer();
     void resetPlayer();
+
+    Player* m_player = nullptr;
+    Player2* m_player2;
 
     static BackEnd* m_instance;
 
     qint64 m_currentPosition = 0;
     qint64 m_currentDuration = 0;
-    Player* m_player = nullptr;
     QThread* m_thread = nullptr;
     QTimer* m_autoSaveTimer = nullptr;
     QSettings m_settings;
@@ -160,5 +164,4 @@ private:
     AudioBook* m_audiobook = nullptr;
     QMediaPlayer::State m_playerstate;
 
-    Player2* m_player2;
 };

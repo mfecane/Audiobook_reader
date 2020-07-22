@@ -246,45 +246,6 @@ void BackEnd::closeAudioBook()
     emit isPlayingChanged();
 }
 
-
-void BackEnd::createPlayer() {
-//    m_thread = new QThread();
-//    m_player = new Player();
-//    m_player->moveToThread(m_thread);
-
-//    connect(m_thread, &QThread::finished, m_player, &QObject::deleteLater);
-//    connect(this, &BackEnd::playerSetFile, m_player, &Player::setFile);
-//    connect(this, &BackEnd::playerPlay, m_player, &Player::play);
-//    connect(this, &BackEnd::playerPause, m_player, &Player::pause);
-//    connect(this, &BackEnd::playerVolume, m_player, &Player::setVolume);
-//    connect(this, &BackEnd::playerTempo, m_player, &Player::setTempo);
-//    connect(this, &BackEnd::playerPosition, m_player, &Player::setPosition);
-//    connect(this, &BackEnd::playerKill, m_player, &Player::die);
-//    connect(this, &BackEnd::playerJump, m_player, &Player::jump);
-//    connect(m_player, &Player::stateChanged, this, &BackEnd::playerStateChanged);
-//    connect(m_player, &Player::positionChanged, this, &BackEnd::positionChangedSlot);
-//    connect(m_player, &Player::finished, this, &BackEnd::onFinishedSlot);
-
-//    m_thread->start();
-
-//    m_player2 = new Player2();
-}
-
-
-void BackEnd::resetPlayer()
-{
-    if(m_audiobook != nullptr && m_audiobook->size() > 0) {
-        QString path = m_audiobook->getCurrentFilePath();
-        int pos = m_audiobook->getCurrentFilePos();
-        if(QFile(path).exists()) {
-            emit playerSetFile(path);
-            emit playerPosition(pos);
-            //pos = 506688;
-            //m_player2->setFile(path, pos);
-        }
-    }
-}
-
 QString int2str(int i)
 {
     QString s;
@@ -412,5 +373,43 @@ void BackEnd::writeCurrentJson()
         jsonRoot["currentBook"] = m_audiobook->path();
         jsonRoot["currentFile"] = m_audiobook->index();
         muxJson.unlock();
+    }
+}
+
+void BackEnd::createPlayer() {
+//    m_thread = new QThread();
+//    m_player = new Player();
+//    m_player->moveToThread(m_thread);
+
+//    connect(m_thread, &QThread::finished, m_player, &QObject::deleteLater);
+//    connect(this, &BackEnd::playerSetFile, m_player, &Player::setFile);
+//    connect(this, &BackEnd::playerPlay, m_player, &Player::play);
+//    connect(this, &BackEnd::playerPause, m_player, &Player::pause);
+//    connect(this, &BackEnd::playerVolume, m_player, &Player::setVolume);
+//    connect(this, &BackEnd::playerTempo, m_player, &Player::setTempo);
+//    connect(this, &BackEnd::playerPosition, m_player, &Player::setPosition);
+//    connect(this, &BackEnd::playerKill, m_player, &Player::die);
+//    connect(this, &BackEnd::playerJump, m_player, &Player::jump);
+//    connect(m_player, &Player::stateChanged, this, &BackEnd::playerStateChanged);
+//    connect(m_player, &Player::positionChanged, this, &BackEnd::positionChangedSlot);
+//    connect(m_player, &Player::finished, this, &BackEnd::onFinishedSlot);
+
+//    m_thread->start();
+
+//    m_player2 = new Player2();
+}
+
+
+void BackEnd::resetPlayer()
+{
+    if(m_audiobook != nullptr && m_audiobook->size() > 0) {
+        QString path = m_audiobook->getCurrentFilePath();
+        int pos = m_audiobook->getCurrentFilePos();
+        if(QFile(path).exists()) {
+            emit playerSetFile(path);
+            emit playerPosition(pos);
+            //pos = 506688;
+            //m_player2->setFile(path, pos);
+        }
     }
 }

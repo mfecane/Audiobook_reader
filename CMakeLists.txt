@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
 
-include_directories("D:/dev/lib/soundtouch_dll-2.1.1")
-link_directories("D:/dev/lib/soundtouch_dll-2.1.1")
+include_directories(
+    "D:/dev/lib/soundtouch_dll-2.1.1"
+    "D:/dev/lib/ffmpeg_build/inc"
+    )
+link_directories(
+    "D:/dev/lib/soundtouch_dll-2.1.1"
+    "D:/dev/lib/ffmpeg_build/prefix/lib"
+    )
 
 project("audiobook_reader")
 
@@ -81,9 +87,20 @@ target_link_libraries(${PROJECT_NAME} Qt5::Core)
 target_link_libraries(${PROJECT_NAME} Qt5::Qml)
 target_link_libraries(${PROJECT_NAME} Qt5::Quick)
 target_link_libraries(${PROJECT_NAME} Qt5::Multimedia)
-target_link_libraries(${PROJECT_NAME} "SoundTouchDLL_x64.lib")
-target_link_libraries(${PROJECT_NAME} "dwmapi.lib")
+target_link_libraries(${PROJECT_NAME} SoundTouchDLL_x64)
+target_link_libraries(${PROJECT_NAME} dwmapi)
+
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libavcodec.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libavdevice.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libavfilter.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libavformat.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libavutil.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libpostproc.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libswresample.a)
+target_link_libraries(${PROJECT_NAME} D:/dev/lib/ffmpeg_build/prefix/lib/libswscale.a)
 	
+set (CMAKE_C_FLAGS "/MT" )
+
 # set startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 

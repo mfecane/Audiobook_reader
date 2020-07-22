@@ -1,7 +1,5 @@
 Unicode True
 
-# All the other settings can be tweaked by editing the !defines at the top of this script
-
 !define APPNAME "Audiobook player"
 !define COMPANYNAME "Gavitka Software"
 !define DESCRIPTION "Audiobook player."
@@ -10,17 +8,16 @@ Unicode True
 !define EXEFILE "audiobook_reader"
 !define BUILDDIR "..\build\"
 
-# These three must be integers
 !define VERSIONMAJOR 1
 !define VERSIONMINOR 0
 !define VERSIONBUILD 0
+
 # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
 # It is possible to use "mailto:" links in here to open the email client
 !define HELPURL "http://..." # "Support Information" link
 !define UPDATEURL "http://..." # "Product Updates" link
 !define ABOUTURL "http://..." # "Publisher" link
-# This is the size (in kB) of all the files copied into "Program Files"
-# to update
+
 !define INSTALLSIZE 149352
  
 RequestExecutionLevel admin ;Require admin rights on NT6+ (When UAC is turned on)
@@ -29,15 +26,14 @@ InstallDir "$PROGRAMFILES64\${COMPANYNAME}\${APPNAME}"
  
 # rtf or txt file - remember if it is txt, it must be in the DOS text format (\r\n)
 LicenseData "license.rtf"
-# This will be in the installer/uninstaller's title bar
+
 Name "${APPNAME}"
 Icon "../images/icon.ico"
 outFile "${APPNAMELC}.win-x64.exe"
  
 !include LogicLib.nsh
 !include "x64.nsh"
- 
-# Just three pages - license agreement, install location, and installation
+
 page license
 page directory
 Page instfiles
@@ -61,18 +57,12 @@ section "install"
 
 	SetRegView 64
 
-	# Files for the install directory - to build the installer, these should be in the same directory as the install script (this file)
 	setOutPath $INSTDIR
-	# Files added here should be removed by the uninstaller (see section "uninstall")
-	# file "app.exe"
-	# file "logo.ico"
-	
-	# Executable
 
+	# Executable
 	File "${BUILDDIR}audiobook_reader.exe"
 
 	# Dll's
-
 	File "${BUILDDIR}*.dll"
 
 	# QML stuff
@@ -116,7 +106,6 @@ section "install"
 	File /nonfatal /r "${BUILDDIR}translations\"
 
 	# Add any other files for the install directory (license files, app data, etc) here
- 
 	ExecWait "$INSTDIR\vcredist_x64.exe /q /norestart"
  
 	# Uninstaller - See function un.onInit and section "uninstall" for configuration
@@ -125,7 +114,6 @@ section "install"
  	# Start Menu
 	createDirectory "$SMPROGRAMS\${COMPANYNAME}"
 	createShortCut "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk" "$INSTDIR\${EXEFILE}.exe"
-	# "" "$INSTDIR\logo.ico"
  
 	# Registry information for add/remove programs
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
@@ -166,7 +154,6 @@ section "uninstall"
 	delete "$SMPROGRAMS\${COMPANYNAME}\${APPNAME}.lnk"
  
 	# Remove files
-
 	rmDir /r $INSTDIR\audio
 	rmDir /r $INSTDIR\bearer
 	rmDir /r $INSTDIR\iconengines
@@ -187,7 +174,6 @@ section "uninstall"
 	delete $INSTDIR\uninstall.exe
  
 	# Try to remove the install directory - this will only happen if it is empty
-
 	rmDir /r $INSTDIR
 
 	# Try to remove the Start Menu folder - this will only happen if it is empty
