@@ -18,6 +18,8 @@ Player::Player(QObject *parent) :
     m_decoder = new QAudioDecoder(this);
     m_decoder->setAudioFormat(m_format);
 
+    qDebug() << "m_format" << m_format;
+
     setOpenMode(QIODevice::ReadOnly);
 
     m_tempo = 1.0f;

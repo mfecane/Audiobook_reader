@@ -8,6 +8,7 @@
 #include "globaljson.h"
 #include "backend.h"
 #include "filesizerequest.h"
+#include "lib.h"
 
 AudioBook::AudioBook(QString path, QObject *parent) :
     AudioBookInfo(path, parent)
@@ -94,14 +95,7 @@ const AudioBookFile &AudioBook::current()
 
 QString AudioBook::filePathAt(int i)
 {
-    QDir d;
-    QString path = m_path + d.separator() + fileAt(i).name;
-    QFile f(path);
-    if(f.exists()) {
-        return path;
-    } else {
-        return QString("");
-    }
+    return filepath(m_path, fileAt(i).name);
 }
 
 bool AudioBook::setNext() {

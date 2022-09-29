@@ -134,14 +134,12 @@ private:
     void readCurrentJson(QString &savedFolder, int &savedIndex);
     void setupAutosave();
     void closeAudioBook();
-    QString formatTime(int msec);
-
 
     void createPlayer();
     void resetPlayer();
 
     Player* m_player = nullptr;
-    Player2* m_player2;
+    Player2* m_player2 = nullptr;
 
     static BackEnd* m_instance;
 

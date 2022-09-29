@@ -10,6 +10,7 @@
 #include "globaljson.h"
 #include "audiobook.h"
 #include "backend.h"
+#include "lib.h"
 
 BackEnd* BackEnd::m_instance = nullptr;
 
@@ -174,24 +175,11 @@ QString BackEnd::tempo()
 QString BackEnd::currentTime()
 {
     if(m_audiobook != nullptr) {
-        QString s1 = formatTime(m_audiobook->progressInt());
-        QString s2 = formatTime(m_audiobook->sizeTotal());
+        QString s1 = format_time(m_audiobook->progressInt());
+        QString s2 = format_time(m_audiobook->sizeTotal());
         return s1 + " / " + s2;
     }
     return QStringLiteral("..:..:.. / ..:..:.."); // TODO: add loading animation
-}
-
-QString BackEnd::formatTime(int msec)
-{
-    qint64 t;
-    int sec, min, hour;
-    t = msec;
-    sec = floor(t / 1000);
-    min = floor(sec / 60);
-    sec = sec % 60;
-    hour = floor(min / 60);
-    min = min % 60;
-    return QString("%1:%2:%3").arg(int2str(hour)).arg(int2str(min)).arg(int2str(sec));
 }
 
 qreal BackEnd::volume()
@@ -246,18 +234,6 @@ void BackEnd::closeAudioBook()
     emit isPlayingChanged();
 }
 
-QString int2str(int i)
-{
-    QString s;
-    s = QString::number(i);
-    if(s.length() != 2) {
-        s = QString("0") + s.right(1);
-        return s;
-    } else {
-        return s;
-    }
-}
-
 AudioBook *BackEnd::audioBook()
 {
     return m_audiobook;
@@ -266,6 +242,10 @@ AudioBook *BackEnd::audioBook()
 void BackEnd::play()
 {
     emit playerPlay();
+
+    m_player2 = new Player2();
+    m_player2->setFile(m_audiobook->getCurrentFilePath());
+    m_player2->start();
 }
 
 void BackEnd::stop()
@@ -378,7 +358,7 @@ void BackEnd::writeCurrentJson()
 
 void BackEnd::createPlayer() {
 //    m_thread = new QThread();
-//    m_player = new Player();
+    m_player = new Player();
 //    m_player->moveToThread(m_thread);
 
 //    connect(m_thread, &QThread::finished, m_player, &QObject::deleteLater);
@@ -396,7 +376,6 @@ void BackEnd::createPlayer() {
 
 //    m_thread->start();
 
-//    m_player2 = new Player2();
 }
 
 
@@ -408,8 +387,7 @@ void BackEnd::resetPlayer()
         if(QFile(path).exists()) {
             emit playerSetFile(path);
             emit playerPosition(pos);
-            //pos = 506688;
-            //m_player2->setFile(path, pos);
+            //m_player2->setFile(path);
         }
     }
 }

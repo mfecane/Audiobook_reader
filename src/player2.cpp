@@ -1,5 +1,10 @@
+#pragma once
+
+#include "pch.h"
+
 #include <QAudioBuffer>
 #include <QAudioDeviceInfo>
+#include <QBuffer>
 #include <QFile>
 
 #include "player2.h"
@@ -7,233 +12,309 @@
 #define AUDIO_INBUF_SIZE 20480
 #define AUDIO_REFILL_THRESH 4096
 
-Player2::Player2() {
 
+const char* averr(int ret) {
+    char* gay;
+    av_make_error_string(gay, 256, ret);
+    return gay;
 }
 
-void Player2::start(QString filename)
+Player2::Player2():
+    m_format()
 {
-//    const char *outfilename, *filename;
-     const AVCodec *codec;
-     AVCodecContext *c= NULL;
-     AVCodecParserContext *parser = NULL;
-     int len, ret;
-     FILE *f, *outfile;
-     uint8_t inbuf[AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-     uint8_t *data;
-     size_t   data_size;
-     AVPacket *pkt;
-     AVFrame *decoded_frame = NULL;
-     enum AVSampleFormat sfmt;
-     int n_channels = 0;
-     const char *fmt;
+    m_dataframe = new QByteArray();
+    m_readBuffer = new QBuffer(m_dataframe, this);
+    m_readBuffer->open(QIODevice::ReadOnly);
 
-     QFile file(filename);
+    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
 
-//     if (argc <= 2) {
-//         fprintf(stderr, "Usage: %s <input file> <output file>\n", argv[0]);
-//         exit(0);
-//     }
-//     filename    = argv[1];
-//     outfilename = argv[2];
+    setOpenMode(QIODevice::ReadOnly);
+    // Set up the format, eg.
 
-     pkt = av_packet_alloc();
+    //m_format = info.preferredFormat(); // Apparently, you need QApplicaion for this call
 
-     /* find the MPEG audio decoder */
-     codec = avcodec_find_decoder(AV_CODEC_ID_MP2);
-     if (!codec) {
-         fprintf(stderr, "Codec not found\n");
-         exit(1);
-     }
+    m_format.setSampleRate(44100);
+    m_format.setChannelCount(2);
+    m_format.setCodec("audio/pcm");
+    m_format.setSampleType(QAudioFormat::Float);
+    m_format.setSampleSize(16);
+    m_format.setByteOrder(QAudioFormat::LittleEndian);
 
-     parser = av_parser_init(codec->id);
-     if (!parser) {
-         fprintf(stderr, "Parser not found\n");
-         exit(1);
-     }
+//    This stream has  2  channels and a sample rate of  44100 Hz
+//    The data is in the format  fltp
+//    Audio frame info:
+//       Sample count:  47
+//       Channel count:  2
+//       Format:  fltp
+//       Bytes per sample:  4
+//       Is planar?  1
 
-     c = avcodec_alloc_context3(codec);
-     if (!c) {
-         fprintf(stderr, "Could not allocate audio codec context\n");
-         exit(1);
-     }
+    qDebug() << "m_format" << m_format;
 
-     /* open it */
-     if (avcodec_open2(c, codec, NULL) < 0) {
-         fprintf(stderr, "Could not open codec\n");
-         exit(1);
-     }
-
-     if (!file.open(QIODevice::ReadOnly)) {
-         qDebug() << "Could not open " << filename;
-         exit(1);
-     }
-
-//     outfile = fopen(outfilename, "wb");
-//     if (!outfile) {
-//         av_free(c);
-//         exit(1);
-//     }
-
-     // TODO: open audio device;
-
-     /* decode until eof */
-     data      = inbuf;
-     //data_size = fread(inbuf, 1, AUDIO_INBUF_SIZE, f);
-     data_size = file.read((char*)inbuf, AUDIO_INBUF_SIZE);
-
-     while (data_size > 0) {
-         if (!decoded_frame) {
-             if (!(decoded_frame = av_frame_alloc())) {
-                 fprintf(stderr, "Could not allocate audio frame\n");
-                 exit(1);
-             }
-         }
-
-         ret = av_parser_parse2(parser, c, &pkt->data, &pkt->size,
-                                data, data_size,
-                                AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
-         if (ret < 0) {
-             fprintf(stderr, "Error while parsing\n");
-             exit(1);
-         }
-         data      += ret;
-         data_size -= ret;
-
-         if (pkt->size)
-             decode(c, pkt, decoded_frame, outfile);
-
-         if (data_size < AUDIO_REFILL_THRESH) {
-             memmove(inbuf, data, data_size);
-             data = inbuf;
-             len = fread(data + data_size, 1,
-                         AUDIO_INBUF_SIZE - data_size, f);
-             if (len > 0)
-                 data_size += len;
-         }
-     }
-
-     /* flush the decoder */
-     pkt->data = NULL;
-     pkt->size = 0;
-     decode(c, pkt, decoded_frame, outfile);
-
-     /* print output pcm infomations, because there have no metadata of pcm */
-     sfmt = c->sample_fmt;
-
-     if (av_sample_fmt_is_planar(sfmt)) {
-         const char *packed = av_get_sample_fmt_name(sfmt);
-         printf("Warning: the sample format the decoder produced is planar "
-                "(%s). This example will output the first channel only.\n",
-                packed ? packed : "?");
-         sfmt = av_get_packed_sample_fmt(sfmt);
-     }
-
-     n_channels = c->channels;
-     if ((ret = get_format_from_sample_fmt(&fmt, sfmt)) < 0)
-         goto end;
-
-//     printf("Play the output audio file with the command:\n"
-//            "ffplay -f %s -ac %d -ar %d %s\n",
-//            fmt, n_channels, c->sample_rate,
-//            outfilename);
- end:
-     //fclose(outfile);
-     //fclose(f);
-
-     file.close();
-
-     avcodec_free_context(&c);
-     av_parser_close(parser);
-     av_frame_free(&decoded_frame);
-     av_packet_free(&pkt);
-}
-
-void Player2::decode(AVCodecContext *dec_ctx, AVPacket *pkt, AVFrame *frame,
-                     FILE *outfile){
-    int i, ch;
-    int ret, data_size;
-
-    /* send the packet with the compressed data to the decoder */
-    ret = avcodec_send_packet(dec_ctx, pkt);
-    if (ret < 0) {
-        fprintf(stderr, "Error submitting the packet to the decoder\n");
-        exit(1);
+    if (!info.isFormatSupported(m_format)) {
+        throw std::exception("Raw audio format not supported by backend, cannot play audio.");
     }
 
-    /* read all the output frames (in general there may be any number of them */
-    while (ret >= 0) {
-        ret = avcodec_receive_frame(dec_ctx, frame);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            return;
-        else if (ret < 0) {
-            fprintf(stderr, "Error during decoding\n");
-            exit(1);
-        }
-        data_size = av_get_bytes_per_sample(dec_ctx->sample_fmt);
-        if (data_size < 0) {
-            /* This should not occur, checking just for paranoia */
-            fprintf(stderr, "Failed to calculate data size\n");
-            exit(1);
-        }
-        for (i = 0; i < frame->nb_samples; i++)
-            for (ch = 0; ch < dec_ctx->channels; ch++)
-                fwrite(frame->data[ch] + data_size*i, 1, data_size, outfile);
-    }
+    m_audio = new QAudioOutput(m_format, this);
+    m_audio->setNotifyInterval(512); // TODO: play with this number
+    m_audio->setVolume(1.0f);
+    connect(m_audio, &QAudioOutput::stateChanged, this, &Player2::handleStateChanged);
+    connect(m_audio, &QAudioOutput::notify, this, &Player2::notifySlot);
+    start();
+    m_audio->start(this);
 }
 
-int Player2::get_format_from_sample_fmt(const char **fmt, enum AVSampleFormat sample_fmt)
-{
-    int i;
-    struct sample_fmt_entry {
-        enum AVSampleFormat sample_fmt; const char *fmt_be, *fmt_le;
-    } sample_fmt_entries[] = {
-        { AV_SAMPLE_FMT_U8,  "u8",    "u8"    },
-        { AV_SAMPLE_FMT_S16, "s16be", "s16le" },
-        { AV_SAMPLE_FMT_S32, "s32be", "s32le" },
-        { AV_SAMPLE_FMT_FLT, "f32be", "f32le" },
-        { AV_SAMPLE_FMT_DBL, "f64be", "f64le" },
-    };
-    *fmt = NULL;
-
-    for (i = 0; i < FF_ARRAY_ELEMS(sample_fmt_entries); i++) {
-        struct sample_fmt_entry *entry = &sample_fmt_entries[i];
-        if (sample_fmt == entry->sample_fmt) {
-            *fmt = AV_NE(entry->fmt_be, entry->fmt_le);
-            return 0;
-        }
-    }
-
-    fprintf(stderr,
-            "sample format %s is not supported as output format\n",
-            av_get_sample_fmt_name(sample_fmt));
-    return -1;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void Player2::setFile(QString filename, qint64 pos)
+void Player2::setFile(QString filename)
 {
     if(!QFile(filename).exists()) return; // TODO: handlebetter
-    m_filename = filename;
-    m_request_pos = pos;
+        m_filename = filename;
+}
+
+void Player2::handleStateChanged(QAudio::State state)
+{
+    switch(state) {
+        case QAudio::ActiveState:
+            qDebug() << "QAudio::ActiveState";
+            break;
+        case QAudio::SuspendedState:
+            qDebug() << "QAudio::SuspendedState";
+            break;
+        case QAudio::StoppedState:
+            qDebug() << "QAudio::StoppedState";
+            emit finished();
+            break;
+        case QAudio::IdleState:
+            qDebug() << "QAudio::IdleState";
+            break;
+        case QAudio::InterruptedState:
+            qDebug() << "QAudio::InterruptedState";
+            break;
+    }
+}
+
+void Player2::notifySlot()
+{
+    if(m_audio->bytesFree() > 20000) {
+        // encode some more frames to m_dataframe
+
+    }
+    qDebug() << "m_dataframe->size()" << m_dataframe->size();
+    qDebug() << "m_readBuffer->pos()" << m_readBuffer->pos();
+    qDebug() << "m_audio->processedUSecs()" << m_audio->processedUSecs() / 1000 / 1000;
+    qDebug() << "m_audio->periodSize()" << m_audio->periodSize();
+}
+
+qint64 Player2::readData(char *data, qint64 maxlen)
+{
+    if(maxlen <= 0) return 0;
+    int readlen = qMin((int)maxlen, (int)m_readBuffer->bytesAvailable()); // TODO: fix cast\
+    // TODO IMPLEMENT MIN
+    // Write zero to data
+    memset(data, 0, maxlen);
+    //QBuffer buff(m_dataframe);
+    //buff.open(QIODevice::ReadOnly);
+    //buff.read(data, readlen);
+    m_readBuffer->read(data, readlen);
+    //qDebug() << "m_readBuffer->pos()" << m_readBuffer->pos();
+    //m_dataframe->remove(0, readlen);
+    return maxlen;
+}
+
+qint64 Player2::writeData(const char *data, qint64 len)
+{
+    Q_UNUSED(data)
+    Q_UNUSED(len)
+    throw std::logic_error("Deleted funcion");
+    return 0;
 }
 
 void Player2::setPosition(qint64 pos)
 {
+
 }
 
-void Player2::bufferReadySlot()
+void Player2::start()
 {
+    AVFrame* frame = av_frame_alloc();
+    if (!frame) throw std::exception("Error allocating the frame");
+
+    AVFrame* output = av_frame_alloc();
+    if (!output) throw std::exception("Error allocating the frame");
+    output->format = AV_SAMPLE_FMT_S16;
+    output->channel_layout = AV_CH_LAYOUT_STEREO;
+    output->sample_rate = 44100;
+
+    av_frame_set_channels(output, 2);
+    av_frame_set_channel_layout(output, 3);
+    av_frame_copy_props(output, frame);
+
+    AVFormatContext* formatContext = NULL;
+    qDebug() << "m_filename.toLatin1()" << m_filename.toStdString().c_str();
+    if (avformat_open_input(&formatContext, "E:/Music/Pump It Up   Danzel.mp3", NULL, NULL) != 0) {
+        av_free(frame);
+        throw std::exception("Error opening the file");
+    }
+
+    if (avformat_find_stream_info(formatContext, NULL) < 0)
+    {
+        av_free(frame);
+        avformat_close_input(&formatContext);
+        throw std::exception("Error finding the stream info" );
+    }
+
+
+    AVCodec* cdc = nullptr;
+    int streamIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &cdc, 0);
+    if (streamIndex < 0)
+    {
+        av_free(frame);
+        avformat_close_input(&formatContext);
+        throw std::exception("Could not find any audio stream in the file");
+    }
+
+    AVStream* audioStream = formatContext->streams[streamIndex];
+    AVCodecContext* codecContext = audioStream->codec;
+    codecContext->codec = cdc;
+
+    SwrContext *swr = swr_alloc();
+
+    swr = swr_alloc();
+    av_opt_set_int(swr, "in_channel_layout",  AV_CH_LAYOUT_STEREO, 0);
+    av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO,  0);
+    av_opt_set_int(swr, "in_sample_rate", 44100, 0);
+    av_opt_set_int(swr, "out_sample_rate", 44100, 0);
+    av_opt_set_sample_fmt(swr, "in_sample_fmt",  AV_SAMPLE_FMT_FLTP, 0);
+    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
+    swr_init(swr);
+
+//  This is just ignored
+//    codecContext->request_sample_fmt = AV_SAMPLE_FMT_S16;
+//    codecContext->sample_fmt = AV_SAMPLE_FMT_S16;
+
+    if (avcodec_open2(codecContext, codecContext->codec, NULL) != 0)
+    {
+        av_free(frame);
+        avformat_close_input(&formatContext);
+        throw std::exception("Couldn't open the context with the decoder");
+    }
+
+    qDebug() << "This stream has " << codecContext->channels << " channels and a sample rate of " << codecContext->sample_rate << "Hz";
+    qDebug() << "The data is in the format " << av_get_sample_fmt_name(codecContext->sample_fmt);
+
+    AVPacket readingPacket;
+    av_init_packet(&readingPacket);
+
+    // Read the packets in a loop
+    while (av_read_frame(formatContext, &readingPacket) == 0)
+    {
+        decode(codecContext, &readingPacket, frame, output, audioStream, swr);
+    }
+    qDebug() << "decoding finished";
+    qDebug() << "m_dataframe->size()" << m_dataframe->size();
 }
+
+void Player2::decode(AVCodecContext* codecContext, AVPacket* readingPacket, AVFrame* frame, AVFrame* output, AVStream* audioStream, SwrContext *swr)
+{
+    if (readingPacket->stream_index == audioStream->index)
+    {
+        AVPacket decodingPacket = *readingPacket;
+
+        // Try to decode the packet into a frame
+        // Some frames rely on multiple packets, so we have to make sure the frame is finished before
+        // we can use it
+        int ret = avcodec_send_packet(codecContext, &decodingPacket);
+        if (ret < 0) {
+            throw std::exception("Couldn't send packet data");
+        }
+        // Audio packets can have multiple audio frames in a single packet
+        while (ret >= 0) {
+            ret = avcodec_receive_frame(codecContext, frame);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                return;
+            else if (ret < 0) {
+                throw std::exception("Error during decoding");
+            }
+            printAudioFrameInfo(codecContext, frame, output, swr);
+        }
+    }
+
+
+    // You *must* call av_free_packet() after each call to av_read_frame() or else you'll leak memory
+    av_free_packet(readingPacket);
+}
+
+void Player2::printAudioFrameInfo(const AVCodecContext* codecContext, const AVFrame* frame, AVFrame* output, SwrContext *swr)
+{
+
+    //Input and output AVFrames must have channel_layout, sample_rate and format set.
+
+    // See the following to know what data type (unsigned char, short, float, etc) to use to access the audio data:
+    // http://ffmpeg.org/doxygen/trunk/samplefmt_8h.html#af9a51ca15301871723577c730b5865c5
+//    qDebug() << "Audio frame info:\n"
+//        << "  Sample count: " << frame->nb_samples << '\n'
+//        << "  Channel count: " << codecContext->channels << '\n'
+//        << "  Format: " << av_get_sample_fmt_name(codecContext->sample_fmt) << '\n'
+//        << "  Bytes per sample: " << av_get_bytes_per_sample(codecContext->sample_fmt) << '\n'
+//        << "  Is planar? " << av_sample_fmt_is_planar(codecContext->sample_fmt) << '\n';
+
+
+//    qDebug() << "frame->linesize[0] tells you the size (in bytes) of each plane\n";
+
+    if (codecContext->channels > AV_NUM_DATA_POINTERS && av_sample_fmt_is_planar(codecContext->sample_fmt))
+    {
+//        qDebug() << "The audio stream (and its frames) have too many channels to fit in\n"
+//            << "frame->data. Therefore, to access the audio data, you need to use\n"
+//            << "frame->extended_data to access the audio data. It's planar, so\n"
+//            << "each channel is in a different element. That is:\n"
+//            << "  frame->extended_data[0] has the data for channel 1\n"
+//            << "  frame->extended_data[1] has the data for channel 2\n"
+//            << "  etc.\n";
+    }
+    else
+    {
+        m_dataframe->append((const char*)frame->data, frame->linesize[0]);
+
+//        qDebug() << "frame->linesize[0]" << frame->linesize[0];
+//        qDebug() << "frame->nb_samples * frame->channels * 2" << frame->nb_samples * frame->channels * 2;
+
+//        int outputBufferLen = frame->nb_samples * frame->channels * 2;
+//        uint8_t* outputBuffer = new uint8_t[outputBufferLen];
+//        swr_convert(swr, &outputBuffer, frame->nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+//        m_dataframe->append(*outputBuffer, outputBufferLen);
+
+        //swr_config_frame(swr, output, frame);
+
+        //set avframe format
+//        int ret = swr_convert_frame(swr, output, frame);
+//        if(ret != 0) {
+//            qDebug() << averr(ret);
+//            throw std::exception("Error during swr_convert_frame");
+//        }
+//        qDebug() << "frame->linesize[0]: " << frame->linesize[0];
+//        qDebug() << "output->linesize[0]: " << output->linesize[0];
+//        m_dataframe->append((const char*)output->data, output->linesize[0]);
+//        while((ret = swr_convert_frame(swr, output, NULL)) == 0)
+//        {
+//            qDebug() << "swr_get_delay(swr, 44100)" << swr_get_delay(swr, 44100);
+//            qDebug() << "additional output->linesize[0]: " << output->linesize[0];
+//            m_dataframe->append((const char*)output->data, output->linesize[0]);
+//        }
+//        qDebug() << "Either the audio data is not planar, or there is enough room in\n"
+//            << "frame->data to store all the channels, so you can either use\n"
+//            << "frame->data or frame->extended_data to access the audio data (they\n"
+//            << "should just point to the same data).\n";
+    }
+
+//    qDebug() << "If the frame is planar, each channel is in a different element.\n"
+//        << "That is:\n"
+//        << "  frame->data[0]/frame->extended_data[0] has the data for channel 1\n"
+//        << "  frame->data[1]/frame->extended_data[1] has the data for channel 2\n"
+//        << "  etc.\n";
+
+//    qDebug() << "If the frame is packed (not planar), then all the data is in\n"
+//        << "frame->data[0]/frame->extended_data[0] (kind of like how some\n"
+//        << "image formats have RGB pixels packed together, rather than storing\n"
+//        << " the red, green, and blue channels separately in different arrays.\n";
+}
+
+
